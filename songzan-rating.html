@@ -1391,40 +1391,15 @@ const app = (function() {
     };
     record.id = Date.now();
 
-    // 1. 始终先保存到 localStorage（降级保障）
+    // 1. 保存到 localStorage（本地存储）
     var localKey = 'songzan_ratings';
     var localData = [];
     try { localData = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch(e) {}
     localData.push(record);
     try { localStorage.setItem(localKey, JSON.stringify(localData)); } catch(e) {}
 
-    // 2. 尝试保存到 Vercel API
-    var savedToCloud = false;
-    var scfReady = API_BASE_URL && API_BASE_URL.indexOf('PASTE_YOUR') === -1;
-    if (scfReady) {
-      showToast('☁️ 正在保存到云端...');
-      try {
-        var resp = await fetch(API_BASE_URL + '?action=save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'save', record: record })
-        });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        var result = await resp.json();
-        if (result.success) savedToCloud = true;
-      } catch(e) {
-        console.error('API save failed:', e);
-      }
-    }
-
-    // 3. 显示结果
-    if (savedToCloud) {
-      showToast('✅ 已保存到云端＋本地！');
-    } else if (scfReady) {
-      showToast('⚠️ 云端保存失败，已保存到本地');
-    } else {
-      showToast('✅ 已保存到本地（未配置云端）');
-    }
+    // 显示结果
+    showToast('✅ 已保存到本地！');
     closeModal();
   }
 
