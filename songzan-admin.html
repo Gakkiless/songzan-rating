@@ -74,7 +74,7 @@ body { padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-
 input[type="date"], select { -webkit-appearance: none; }
 /* 禁止 iOS 长按弹出菜单（输入框除外） */
 * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-input, textarea, select { -webkit-touch-callout: default; -webkit-user-select: text; user-select: text; }
+input, textarea, select, .login-input { -webkit-touch-callout: default; -webkit-user-select: text; user-select: text; }
 
 /* ===== 登录遮罩层 ===== */
 .login-overlay{
@@ -253,6 +253,7 @@ const adminLogin = (function(){
       errEl.textContent = '请输入密码'; errEl.style.display='block';
       return;
     }
+    // 先尝试云端验证
     try {
       var res = await fetch(API_BASE + '?action=login', {
         method: 'POST',
@@ -264,21 +265,24 @@ const adminLogin = (function(){
         localStorage.setItem(LS_KEY, VALID_TOKEN);
         errEl.style.display='none';
         document.getElementById('loginOverlay').classList.add('hidden');
-      } else {
-        errEl.textContent = data.error || '密码错误，请重试';
-        errEl.style.display='block';
-        pwd.value=''; pwd.focus();
+        admin.refresh(); // 登录成功后加载数据
+        return;
       }
+      errEl.textContent = data.error || '密码错误，请重试';
+      errEl.style.display='block'; pwd.value=''; pwd.focus();
+      return;
     } catch(e) {
-      // 离线降级：前端本地校验
-      if (pwd.value === 'songzan2026') {
-        localStorage.setItem(LS_KEY, VALID_TOKEN);
-        errEl.style.display='none';
-        document.getElementById('loginOverlay').classList.add('hidden');
-      } else {
-        errEl.textContent = '网络异常或密码错误';
-        errEl.style.display='block';
-      }
+      console.warn('登录网络异常:', e);
+    }
+    // 离线降级：前端本地校验
+    if (pwd.value === 'songzan2026') {
+      localStorage.setItem(LS_KEY, VALID_TOKEN);
+      errEl.style.display='none';
+      document.getElementById('loginOverlay').classList.add('hidden');
+      admin.refresh(); // 登录成功后加载数据
+    } else {
+      errEl.textContent = '网络异常或密码错误';
+      errEl.style.display='block';
     }
   }
 
@@ -319,21 +323,43 @@ const admin = (function(){
   var filtered = [];
   var charts = {};
 
+  // 云端 API（SCF 函数URL）
+  const CLOUD_API_URL = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
 
   async function loadRecords() {
     var all = [];
     var seenIds = {};
+    var cloudLoaded = false;
 
-    // 从 localStorage 加载
+    // 1. 优先从 SCF 云端加载（共享数据）
     try {
-      var localData = JSON.parse(localStorage.getItem('songzan_ratings') || '[]');
-      localData.forEach(function(r) {
-        if (r && r.id && !seenIds[r.id]) {
-          seenIds[r.id] = true;
-          all.push(r);
+      var res = await fetch(CLOUD_API_URL + '?action=list', { method: 'GET' });
+      if (res.ok) {
+        var result = await res.json();
+        if (result.success && result.data) {
+          (result.data || []).forEach(function(r) {
+            if (r && r.id && !seenIds[r.id]) {
+              seenIds[r.id] = true;
+              all.push(r);
+            }
+          });
+          cloudLoaded = true;
         }
-      });
-    } catch(e) { console.error('localStorage load failed:', e); }
+      }
+    } catch(e) { console.warn('云端加载失败，使用本地数据:', e); }
+
+    // 2. localStorage 作为补充/降级
+    if (!cloudLoaded) {
+      try {
+        var localData = JSON.parse(localStorage.getItem('songzan_ratings') || '[]');
+        localData.forEach(function(r) {
+          if (r && r.id && !seenIds[r.id]) {
+            seenIds[r.id] = true;
+            all.push(r);
+          }
+        });
+      } catch(e) { console.error('localStorage load failed:', e); }
+    }
 
     // 按日期排序（新→旧）
     all.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
@@ -578,17 +604,25 @@ const admin = (function(){
     document.getElementById('detailModal').classList.remove('open');
   }
 
-    async function deleteRecord(id) {
+  async function deleteRecord(id) {
     if(!confirm('确认删除这条评估记录？此操作不可撤销。'))return;
+    
+    // 同步删除云端数据
+    try {
+      await fetch(CLOUD_API_URL + '?action=delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+      });
+    } catch(e) { console.warn('云端删除失败:', e); }
+    
+    // 同时清理本地缓存
     try {
       var localData = JSON.parse(localStorage.getItem('songzan_ratings') || '[]');
       localData = localData.filter(function(r){ return r.id !== id; });
       localStorage.setItem('songzan_ratings', JSON.stringify(localData));
-    } catch(e) {
-      showToast('删除失败，请重试');
-      console.error('deleteRecord error:', e);
-      return;
-    }
+    } catch(e) {}
+    
     await refresh();
   }
 

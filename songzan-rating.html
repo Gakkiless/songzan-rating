@@ -1413,7 +1413,10 @@ const app = (function() {
     if (modal) modal.classList.remove('open');
   }
 
-  // --- 保存记录到本地 ---
+  // --- 云端 API 配置（SCF 云函数 + 函数URL）---
+  const CLOUD_API_URL = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
+
+  // --- 保存记录（本地 + 云端）---
   async function saveRecord() {
     var hotel = document.getElementById('inf-hotel');
     var hotelVal = hotel ? hotel.value : '';
@@ -1441,12 +1444,25 @@ const app = (function() {
     };
     record.id = Date.now();
 
-    // 保存到 localStorage
+    // 1. 保存到 localStorage（本地缓存）
     var localKey = 'songzan_ratings';
     var localData = [];
     try { localData = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch(e) {}
     localData.push(record);
     try { localStorage.setItem(localKey, JSON.stringify(localData)); } catch(e) {}
+
+    // 2. 异步同步到 SCF 云端（不阻塞用户）
+    (function() {
+      fetch(CLOUD_API_URL + '?action=save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      }).then(function(resp){ return resp.json(); })
+        .then(function(result){
+          if (!result.success) console.warn('云端同步失败:', result.error);
+        })
+        .catch(function(e){ console.warn('云端同步失败:', e); });
+    })();
 
     showToast('✅ 评估记录已保存！');
     closeModal();
