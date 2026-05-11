@@ -542,6 +542,25 @@
       border-radius: 4px;
       min-height: 34px;
     }
+
+    /* 基本信息：移动端表单自适应 */
+    #sec-info .section-header { flex-wrap: wrap; }
+    #sec-info .section-meta { margin-right: auto; }
+    #sec-info > div[style*="padding: 24px"] { padding: 16px 12px !important; }
+    #sec-info > div[style*="display:grid"] {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    #sec-info label { font-size: 12px !important; }
+    #sec-info select, #sec-info input[type=text], #sec-info input[type=date], #sec-info textarea {
+      font-size: 14px !important;
+      padding: 8px 10px !important;
+    }
+    /* 评估日期在手机上单独一行 */
+    #sec-info > div[style*="display:grid"] > div:nth-child(2) {
+      grid-column: 1 / -1;
+    }
   }
   @media print {
     .top-bar, .sidebar, .score-panel, .btn-submit, .btn-export,
@@ -567,7 +586,9 @@
   .top-bar { padding-top: calc(0px + env(safe-area-inset-top, 0px)); }
 
   .btn-submit, .btn-export, .btn-sm, .btn-modal { min-height: 44px; }
-  input, select, textarea { font-size: 16px; -webkit-appearance: none; }
+  input, select, textarea { font-size: 16px; -webkit-appearance: none; color: var(--text); }
+  /* 修复 iOS Safari 下拉框选项字体颜色 */
+  select option { color: var(--text); background-color: white; }
   /* iOS：禁止长按弹出菜单（输入框除外） */
   * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   input, textarea, select { -webkit-touch-callout: default; -webkit-user-select: text; user-select: text; }
