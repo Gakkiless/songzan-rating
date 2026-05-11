@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>松赞餐饮体验评估系统</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --primary: #8B4513;
+    --primary-light: #A0522D;
+    --primary-dark: #5C2E00;
+    --gold: #C9A84C;
+    --gold-light: #E8D5A3;
+    --gold-lighter: #FAF6EE;
+    --bg: #FDFAF5;
+    --text: #2C1A0E;
+    --text-muted: #7A5C44;
+    --border: #E0CBA0;
+    --white: #FFFFFF;
+    --score5: #2E7D32;
+    --score4: #558B2F;
+    --score3: #F9A825;
+    --score2: #E65100;
+    --score1: #B71C1C;
+    --radius: 10px;
+    --shadow: 0 2px 16px rgba(139,69,19,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .top-bar {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
+    color: var(--white);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(92,46,0,0.25);
+  }
+  .top-bar .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .top-bar .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .top-bar .subtitle { font-size: 12px; opacity: 0.75; font-weight: 400; margin-top: 2px; }
+  .top-bar-right { display: flex; gap: 10px; align-items: center; }
+  .btn-sm {
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+    transition: all .15s;
+  }
+  .btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,0.5); color: white; }
+  .btn-outline:hover { background: rgba(255,255,255,0.15); }
+  .btn-gold { background: var(--gold); color: var(--primary-dark); }
+  .btn-gold:hover { background: #B8952F; }
+
+  .app-layout { display: flex; min-height: calc(100vh - 64px); }
+
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--white);
+    border-right: 1.5px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+  .sidebar-title {
+    padding: 0 18px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-item {
+    padding: 10px 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+    color: var(--text-muted);
+  }
+  .sidebar-item:hover { background: var(--gold-lighter); color: var(--primary); }
+  .sidebar-item.active { border-left-color: var(--primary); background: var(--gold-lighter); color: var(--primary); font-weight: 600; }
+  .sidebar-item .dim-weight {
+    margin-left: auto;
+    font-size: 11px;
+    background: var(--gold-light);
+    color: var(--primary);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .sidebar-item .dim-score {
+    margin-left: 4px;
+    font-size: 11px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+    display: none;
+  }
+  .sidebar-item.scored .dim-score { display: inline-block; }
+  .sidebar-sep { height: 1px; background: var(--border); margin: 10px 18px; }
+
+  .main-content { flex: 1; padding: 28px 32px 60px; max-width: 900px; }
+
+  .section {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    border: 1.5px solid var(--border);
+    display: none;
+  }
+  .section.active { display: block; }
+  .section-header {
+    padding: 18px 24px;
+    border-bottom: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(90deg, var(--gold-lighter) 0%, white 100%);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .section-icon {
+    width: 44px; height: 44px;
+    background: var(--gold);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .section-meta h2 { font-size: 17px; font-weight: 700; color: var(--primary-dark); }
+  .section-meta .meta-row { display: flex; gap: 10px; margin-top: 5px; align-items: center; }
+  .badge {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .badge-weight { background: var(--gold-light); color: var(--primary-dark); }
+  .badge-dim { background: #F3E5F5; color: #6A1B9A; }
+  .section-score-display {
+    margin-left: auto;
+    text-align: right;
+  }
+  .section-score-display .score-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .section-score-display .score-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .subdim {
+    padding: 16px 24px 0;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 16px;
+  }
+  .subdim:last-child { border-bottom: none; }
+  .subdim-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .subdim-title .subdim-weight {
+    font-size: 11px;
+    background: #EDE7F6;
+    color: #4527A0;
+    padding: 2px 7px;
+    border-radius: 8px;
+  }
+
+  .eval-item {
+    margin-bottom: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .eval-item:hover { border-color: var(--gold); }
+  .eval-item.scored { border-color: var(--gold); }
+  .eval-item-header {
+    padding: 12px 16px;
+    background: var(--gold-lighter);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .eval-id {
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--gold);
+    color: var(--primary-dark);
+    padding: 2px 7px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .eval-name { font-size: 13.5px; font-weight: 600; color: var(--text); flex: 1; }
+  .current-score-pill {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: #eee;
+    color: #999;
+  }
+  .current-score-pill.s5 { background: #C8E6C9; color: #1B5E20; }
+  .current-score-pill.s4 { background: #DCEDC8; color: #33691E; }
+  .current-score-pill.s3 { background: #FFF9C4; color: #827717; }
+  .current-score-pill.s2 { background: #FFE0B2; color: #E65100; }
+  .current-score-pill.s1 { background: #FFCDD2; color: #B71C1C; }
+
+  .rating-row {
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: white;
+  }
+  .rating-btn {
+    width: 42px; height: 42px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: white;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .rating-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.12); }
+  .rating-btn.active-5 { background: var(--score5); border-color: var(--score5); color: white; }
+  .rating-btn.active-4 { background: var(--score4); border-color: var(--score4); color: white; }
+  .rating-btn.active-3 { background: var(--score3); border-color: var(--score3); color: white; }
+  .rating-btn.active-2 { background: var(--score2); border-color: var(--score2); color: white; }
+  .rating-btn.active-1 { background: var(--score1); border-color: var(--score1); color: white; }
+  .rating-btn.active-na { background: #9E9E9E; border-color: #9E9E9E; color: white; font-size: 12px; }
+
+  .criteria-toggle { padding: 0 16px 10px; }
+  .criteria-btn {
+    font-size: 12px;
+    color: var(--primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .criteria-content {
+    display: none;
+    background: #FAFAFA;
+    border-top: 1px dashed var(--border);
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--text-muted);
+  }
+  .criteria-content.open { display: block; }
+  .criteria-content strong { color: var(--primary-dark); }
+  .criteria-score-line { margin-bottom: 6px; padding-left: 10px; border-left: 3px solid var(--border); }
+  .criteria-score-line.cs5 { border-color: var(--score5); }
+  .criteria-score-line.cs4 { border-color: var(--score4); }
+  .criteria-score-line.cs3 { border-color: var(--score3); }
+  .criteria-score-line.cs2 { border-color: var(--score2); }
+  .criteria-score-line.cs1 { border-color: var(--score1); }
+
+  .note-area { padding: 0 16px 12px; }
+  .note-area textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    resize: vertical;
+    min-height: 52px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+  }
+  .note-area textarea:focus { border-color: var(--gold); }
+  .note-area textarea::placeholder { color: #bbb; }
+
+  .score-panel {
+    width: 280px;
+    flex-shrink: 0;
+    padding: 20px 16px;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    border-left: 1.5px solid var(--border);
+    background: white;
+  }
+  .score-panel h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .total-score-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--primary) calc(var(--pct,0) * 1%), #eee 0%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    position: relative;
+  }
+  .total-score-inner {
+    width: 88px; height: 88px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .total-score-num {
+    font-size: 30px;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .total-score-max { font-size: 11px; color: var(--text-muted); }
+  .score-level-badge {
+    text-align: center;
+    margin-bottom: 18px;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: var(--gold-light);
+    color: var(--primary-dark);
+  }
+
+  .dim-bar-list { margin-bottom: 20px; }
+  .dim-bar-item { margin-bottom: 12px; }
+  .dim-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .dim-bar-name { font-size: 12px; color: var(--text); font-weight: 600; }
+  .dim-bar-score { font-size: 12px; color: var(--text-muted); }
+  .dim-bar-track { height: 6px; background: #eee; border-radius: 3px; }
+  .dim-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--gold);
+    transition: width .5s;
+  }
+
+  .progress-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 10px;
+    background: var(--gold-lighter);
+    border-radius: 8px;
+    margin-bottom: 14px;
+  }
+  .progress-bar-outer { height: 8px; background: #eee; border-radius: 4px; margin-bottom: 16px; }
+  .progress-bar-inner { height: 100%; background: var(--gold); border-radius: 4px; transition: width .4s; }
+
+  .btn-submit {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: opacity .2s;
+    margin-bottom: 10px;
+  }
+  .btn-submit:hover { opacity: 0.88; }
+  .btn-export {
+    width: 100%;
+    padding: 10px;
+    background: var(--gold-light);
+    color: var(--primary-dark);
+    border: 1.5px solid var(--gold);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-export:hover { background: var(--gold); }
+
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    width: 680px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: white;
+    padding: 24px 28px;
+    border-radius: 16px 16px 0 0;
+    position: relative;
+  }
+  .modal-header h2 { font-size: 20px; margin-bottom: 4px; }
+  .modal-header p { font-size: 13px; opacity: .75; }
+  .modal-close {
+    position: absolute; top: 16px; right: 20px;
+    background: rgba(255,255,255,.2); border: none;
+    color: white; width: 32px; height: 32px;
+    border-radius: 50%; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-body { padding: 24px 28px; }
+  .result-total-row {
+    display: flex; align-items: center; gap: 20px;
+    padding: 20px;
+    background: var(--gold-lighter);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 2px solid var(--gold);
+  }
+  .result-big-score { font-size: 56px; font-weight: 900; color: var(--primary); line-height: 1; }
+  .result-score-meta h3 { font-size: 18px; font-weight: 700; color: var(--primary-dark); }
+  .result-score-meta p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .result-dim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .result-dim-card {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .result-dim-card .rdim-name { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .result-dim-card .rdim-score-row { display: flex; align-items: baseline; gap: 6px; }
+  .result-dim-card .rdim-score { font-size: 22px; font-weight: 800; color: var(--primary); }
+  .result-dim-card .rdim-max { font-size: 12px; color: var(--text-muted); }
+  .result-dim-card .rdim-bar { height: 5px; background: #eee; border-radius: 3px; margin-top: 6px; }
+  .result-dim-card .rdim-bar-fill { height: 100%; border-radius: 3px; background: var(--gold); }
+  .result-notes { font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+  .modal-footer {
+    padding: 16px 28px 24px;
+    display: flex; gap: 12px;
+  }
+  .btn-modal { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-modal-primary { background: var(--primary); color: white; }
+  .btn-modal-secondary { background: var(--gold-light); color: var(--primary-dark); border: 1.5px solid var(--gold); }
+
+  @media (max-width: 900px) {
+    .score-panel { display: none; }
+    .main-content { padding: 18px 16px 60px; max-width: 100%; }
+    .sidebar { width: 200px; }
+  }
+  @media (max-width: 660px) {
+    .sidebar { display: none; }
+    .main-content { padding: 14px 12px 60px; }
+  }
+  @media print {
+    .top-bar, .sidebar, .score-panel, .btn-submit, .btn-export,
+    .criteria-btn, .rating-row, .note-area { display: none !important; }
+    .section { display: block !important; }
+    .app-layout { display: block; }
+    .main-content { max-width: 100%; padding: 0; }
+  }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: var(--primary-dark); color: white;
+    padding: 12px 24px; border-radius: 24px;
+    font-size: 14px; font-weight: 600;
+    z-index: 9999; opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ===== iPhone 显示比例适配 ===== */
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .top-bar { padding-top: calc(0px + env(safe-area-inset-top, 0px)); }
+
+  .btn-submit, .btn-export, .btn-sm, .btn-modal { min-height: 44px; }
+  input, select, textarea { font-size: 16px; -webkit-appearance: none; }
+  /* iOS：禁止长按弹出菜单（输入框除外） */
+  * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  input, textarea, select { -webkit-touch-callout: default; -webkit-user-select: text; user-select: text; }
+  .sidebar { height: calc(100vh - 64px - env(safe-area-inset-top, 0px)); top: calc(64px + env(safe-area-inset-top, 0px)); }
+  .score-panel { height: calc(100vh - 64px - env(safe-area-inset-top, 0px)); top: calc(64px + env(safe-area-inset-top, 0px)); }
+
+  /* ===== 底部管理员入口 ===== */
+  .admin-entry-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 90; text-align: center;
+    padding: 8px 16px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    background: linear-gradient(transparent, rgba(245,250,245,.85));
+    pointer-events: none;
+  }
+  .admin-entry-bar a,
+  .admin-entry-bar button {
+    pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; color: rgba(139,69,19,.3);
+    background: none; border: none; cursor: pointer;
+    padding: 4px 12px; border-radius: 20px;
+    transition: color .2s, background .2s;
+    font-family: inherit; letter-spacing: .5px;
+  }
+  .admin-entry-bar a:hover,
+  .admin-entry-bar button:hover {
+    color: rgba(139,69,19,.6); background: rgba(201,168,76,.15);
+  }
+</style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="logo">
+    <div class="logo-icon">&#9968;</div>
+    <div>
+      <div>松赞餐饮评估系统</div>
+      <div class="subtitle">Songzan Dining Experience Assessment</div>
+    </div>
+  </div>
+  <div class="top-bar-right">
+    <button class="btn-sm btn-outline" onclick="app.showQR()">&#128247; 扫码评估</button>
+    <button class="btn-sm btn-outline" onclick="app.clearAll()">&#128465; 清空重置</button>
+    <button class="btn-sm btn-gold" onclick="app.showResult()">&#128202; 查看总分</button>
+  </div>
+</header>
+
+<div class="app-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-title">评估维度</div>
+    <div class="sidebar-item active" data-sec="info" onclick="app.showSection('info', this)">
+      <span>&#128203;</span> 基本信息
+    </div>
+    <div class="sidebar-sep"></div>
+    <div class="sidebar-item" data-sec="dim1" onclick="app.showSection('dim1', this)">
+      <span>&#9968;</span>
+      <div>景观好<div style="font-size:10px;opacity:.7">Good Scenery</div></div>
+      <span class="dim-weight">20%</span>
+    </div>
+    <div class="sidebar-item" data-sec="dim2" onclick="app.showSection('dim2', this)">
+      <span>&#129309;</span>
+      <div>服务有特质<div style="font-size:10px;opacity:.7">Distinctive Service</div></div>
+      <span class="dim-weight">20%</span>
+    </div>
+    <div class="sidebar-item" data-sec="dim3" onclick="app.showSection('dim3', this)">
+      <span>&#127857;</span>
+      <div>菜品稳定<div style="font-size:10px;opacity:.7">Stable Quality</div></div>
+      <span class="dim-weight">16%</span>
+    </div>
+    <div class="sidebar-item" data-sec="dim4" onclick="app.showSection('dim4', this)">
+      <span>&#127912;</span>
+      <div>主题明确有特色<div style="font-size:10px;opacity:.7">Clear Theme</div></div>
+      <span class="dim-weight">14%</span>
+    </div>
+    <div class="sidebar-item" data-sec="dim5" onclick="app.showSection('dim5', this)">
+      <span>&#128142;</span>
+      <div>物超所值<div style="font-size:10px;opacity:.7">Value for Money</div></div>
+      <span class="dim-weight">12%</span>
+    </div>
+    <div class="sidebar-item" data-sec="dim6" onclick="app.showSection('dim6', this)">
+      <span>&#127807;</span>
+      <div>食材好<div style="font-size:10px;opacity:.7">Good Ingredients</div></div>
+      <span class="dim-weight">10%</span>
+    </div>
+    <div class="sidebar-item" data-sec="dim7" onclick="app.showSection('dim7', this)">
+      <span>&#128154;</span>
+      <div>健康<div style="font-size:10px;opacity:.7">Healthy</div></div>
+      <span class="dim-weight">8%</span>
+    </div>
+  </nav>
+
+  <main class="main-content" id="mainContent">
+
+    <!-- SECTION: INFO -->
+    <div class="section active" id="sec-info">
+      <div class="section-header">
+        <div class="section-icon">&#128203;</div>
+        <div class="section-meta">
+          <h2>评估基本信息</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">评估人填写</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 24px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#127968; 酒店 / 餐厅</label>
+            <select id="inf-hotel" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.onHotelChange(this)">
+              <option value="">请选择酒店 / 餐厅</option>
+              <optgroup label="云南 · 迪庆">
+                <option>松赞香格里拉林卡 — 藏餐厅</option>
+                <option>松赞香格里拉林卡 — 全日制餐厅</option>
+                <option>松赞香格里拉林卡 — Les Horizons Perdus 法餐厅</option>
+                <option>松赞香格里拉林卡 — 酒吧/露台餐厅</option>
+                <option>松赞香格里拉林卡 — 酸菜牛肉火锅店</option>
+                <option>松赞塔城山居 — 餐厅</option>
+                <option>松赞奔子栏山居 — 餐厅</option>
+                <option>松赞绿谷山居 — 曲尼卡 Café</option>
+                <option>松赞绿谷山居 — 藏餐厅</option>
+                <option>松赞茨中山居 — 西餐厅</option>
+                <option>松赞茨中山居 — 中餐厅</option>
+                <option>松赞梅里山居 — 曲尼卡</option>
+                <option>松赞梅里山居 — 餐厅</option>
+              </optgroup>
+              <optgroup label="云南 · 普洱">
+                <option>松赞普洱绿谷 — 餐厅</option>
+              </optgroup>
+              <optgroup label="云南 · 丽江">
+                <option>松赞丽江林卡 — 松赞丽江山居餐厅</option>
+              </optgroup>
+              <optgroup label="云南 · 昆明">
+                <option>松赞昆明林卡 — 曲尼卡 西餐厅</option>
+                <option>松赞昆明林卡 — 地平线餐厅</option>
+                <option>松赞昆明林卡 — 景餐厅</option>
+              </optgroup>
+              <optgroup label="云南 · 怒江">
+                <option>松赞石月亮山居 — 地平线餐厅</option>
+                <option>松赞丙中洛山居 — 餐厅</option>
+              </optgroup>
+              <optgroup label="西藏 · 林芝">
+                <option>松赞波密山居 — 餐厅</option>
+                <option>松赞南迦巴瓦山居 — 景观餐厅</option>
+                <option>松赞巴松措林卡 — 餐厅</option>
+                <option>松赞巴松措林卡 — 西餐厅</option>
+                <option>松赞百巴营地 — 餐厅</option>
+              </optgroup>
+              <optgroup label="西藏 · 昌都">
+                <option>松赞来古山居 — 餐厅</option>
+                <option>松赞如美山居 — 餐厅</option>
+              </optgroup>
+              <optgroup label="西藏 · 拉萨">
+                <option>松赞拉萨林卡 — 中/藏餐厅</option>
+                <option>松赞拉萨林卡 — 西餐厅</option>
+                <option>松赞乃朗山居 — 地平线餐厅</option>
+              </optgroup>
+              <optgroup label="四川 · 稻城亚丁">
+                <option>松赞亚丁山居 — 西藏厅</option>
+                <option>松赞亚丁山居 — 火锅店</option>
+              </optgroup>
+              <option value="__other__">其他（请填写）</option>
+            </select>
+            <div id="hotelOtherWrap" style="display:none;margin-top:8px;">
+              <input type="text" id="inf-hotel-other" placeholder="请输入酒店/餐厅名称" style="width:100%;padding:9px 12px;border:1.5px solid var(--gold);border-radius:7px;font-size:13px;outline:none;" oninput="app.updateProgress()">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#128197; 评估日期</label>
+            <input type="date" id="inf-date" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.updateProgress()">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#127857; 评估餐次</label>
+            <select id="inf-meal" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.updateProgress()">
+              <option value="">请选择</option>
+              <option>早餐</option>
+              <option>午餐</option>
+              <option>晚餐</option>
+              <option>下午茶</option>
+              <option>户外野餐</option>
+              <option>客房送餐</option>
+              <option>全天综合</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#128100; 评估人姓名</label>
+            <input type="text" id="inf-name" placeholder="请填写姓名" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.updateProgress()">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#127917; 评估角色</label>
+            <select id="inf-role" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.updateProgress()">
+              <option value="">请选择</option>
+              <option>店长</option>
+              <option>餐饮管理人员</option>
+              <option>神秘访客</option>
+              <option>集团质检</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#127774; 当日天气</label>
+            <select id="inf-weather" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.updateProgress()">
+              <option value="">请选择</option>
+              <option>晴天</option>
+              <option>多云</option>
+              <option>阴天</option>
+              <option>小雨</option>
+              <option>大雨</option>
+              <option>雪天</option>
+              <option>雾天</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#128221; 整体背景备注</label>
+          <textarea id="inf-note" placeholder="本次评估的特殊情况或背景说明（可选）..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;min-height:70px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+
+        <div style="margin-top:20px;padding:16px;background:var(--gold-lighter);border-radius:8px;border-left:4px solid var(--gold);">
+          <p style="font-size:12px;color:var(--text-muted);line-height:1.8;">
+            <strong style="color:var(--primary-dark);">&#128221; 评分说明：</strong>
+            每道评估项采用 <strong>1&ndash;5分制</strong>：
+            <span style="color:var(--score5);font-weight:700;">5=卓越</span>（创造难忘的松赞时刻）&nbsp;&middot;&nbsp;
+            <span style="color:var(--score4);font-weight:700;">4=优秀</span>（符合高标准）&nbsp;&middot;&nbsp;
+            <span style="color:var(--score3);font-weight:700;">3=合格</span>（达到基础标准）&nbsp;&middot;&nbsp;
+            <span style="color:var(--score2);font-weight:700;">2=待改进</span>（明显不足）&nbsp;&middot;&nbsp;
+            <span style="color:var(--score1);font-weight:700;">1=不可接受</span>（负面影响）&nbsp;&middot;&nbsp;
+            <strong>N/A</strong>=不适用
+          </p>
+        </div>
+
+        <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+          <button class="btn-sm btn-gold" style="padding:10px 24px;font-size:14px;" onclick="app.showSection('dim1', document.querySelector('[data-sec=dim1]'))">开始评估 &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIM 1 -->
+    <div class="section" id="sec-dim1">
+      <div class="section-header">
+        <div class="section-icon">&#9968;</div>
+        <div class="section-meta">
+          <h2>维度一：景观好</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 20%</span>
+            <span class="badge badge-dim">3个子维度 &middot; 11项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim1">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">1.1 公共空间的景观体验 <span class="subdim-weight">子维度权重 <span id="w-dim1-1">40%</span></span></div>
+        <div id="items-dim1-1"></div>
+      </div>
+      <div class="subdim" id="subdim-private-wrap">
+        <div class="subdim-title">
+          1.2 私密空间的景观体验
+          <span class="subdim-weight">子维度权重 <span id="w-dim1-2">35%</span></span>
+          <button id="btn-private-toggle" onclick="app.togglePrivateSpace()" style="font-size:11px;padding:3px 10px;border-radius:8px;cursor:pointer;border:none;font-weight:600;background:#E8F5E9;color:#2E7D32;">&#10003; 此餐厅有私密包房</button>
+        </div>
+        <div id="subdim-private-body">
+          <div style="background:#FFF8E1;border:1px solid #FFD54F;border-radius:6px;padding:8px 12px;font-size:12px;color:#795548;margin-bottom:10px;">
+            &#128161; 若该餐厅无私密包房/景观包房，点击上方按钮关闭此子维度，系统将自动把 35% 权重平均分配给其他子维度。
+          </div>
+          <div id="items-dim1-2"></div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">1.3 户外野餐的景观体验与运营保障 <span class="subdim-weight">子维度权重 <span id="w-dim1-3">25%</span></span></div>
+        <div id="items-dim1-3"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('info', document.querySelector('[data-sec=info]'))">&larr; 返回信息</button>
+        <button class="btn-sm btn-gold" onclick="app.showSection('dim2', document.querySelector('[data-sec=dim2]'))">下一维度 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- DIM 2 -->
+    <div class="section" id="sec-dim2">
+      <div class="section-header">
+        <div class="section-icon">&#129309;</div>
+        <div class="section-meta">
+          <h2>维度二：服务有特质</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 20%</span>
+            <span class="badge badge-dim">4个子维度 &middot; 12项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim2">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">2.1 本地人气质的展现 <span class="subdim-weight">子维度权重 30%</span></div>
+        <div id="items-dim2-1"></div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">2.2 待客如家人的 <em>情感连接</em> <span class="subdim-weight">子维度权重 30%</span></div>
+        <div id="items-dim2-2"></div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">2.3 在地文化气质的融入 <span class="subdim-weight">子维度权重 25%</span></div>
+        <div id="items-dim2-3"></div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">2.4 专业度的坚实基础 <span class="subdim-weight">子维度权重 15%</span></div>
+        <div id="items-dim2-4"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('dim1', document.querySelector('[data-sec=dim1]'))">&larr; 上一维度</button>
+        <button class="btn-sm btn-gold" onclick="app.showSection('dim3', document.querySelector('[data-sec=dim3]'))">下一维度 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- DIM 3 -->
+    <div class="section" id="sec-dim3">
+      <div class="section-header">
+        <div class="section-icon">&#127857;</div>
+        <div class="section-meta">
+          <h2>维度三：菜品稳定</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 16%</span>
+            <span class="badge badge-dim">2个子维度 &middot; 5项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim3">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">3.1 综合品质的持久性 <span class="subdim-weight">子维度权重 60%</span></div>
+        <div id="items-dim3-1"></div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">3.2 作为旅行重要环节的体验连贯性 <span class="subdim-weight">子维度权重 40%</span></div>
+        <div id="items-dim3-2"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('dim2', document.querySelector('[data-sec=dim2]'))">&larr; 上一维度</button>
+        <button class="btn-sm btn-gold" onclick="app.showSection('dim4', document.querySelector('[data-sec=dim4]'))">下一维度 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- DIM 4 -->
+    <div class="section" id="sec-dim4">
+      <div class="section-header">
+        <div class="section-icon">&#127912;</div>
+        <div class="section-meta">
+          <h2>维度四：主题明确有特色</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 14%</span>
+            <span class="badge badge-dim">2个子维度 &middot; 5项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim4">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">4.1 在地食材的深度呈现 <span class="subdim-weight">子维度权重 50%</span></div>
+        <div id="items-dim4-1"></div>
+      </div>
+      <div class="subdim">
+        <div class="subdim-title">4.2 餐食主题与分店特色的差异化 <span class="subdim-weight">子维度权重 50%</span></div>
+        <div id="items-dim4-2"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('dim3', document.querySelector('[data-sec=dim3]'))">&larr; 上一维度</button>
+        <button class="btn-sm btn-gold" onclick="app.showSection('dim5', document.querySelector('[data-sec=dim5]'))">下一维度 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- DIM 5 -->
+    <div class="section" id="sec-dim5">
+      <div class="section-header">
+        <div class="section-icon">&#128142;</div>
+        <div class="section-meta">
+          <h2>维度五：物超所值</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 12%</span>
+            <span class="badge badge-dim">4项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim5">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div id="items-dim5-1"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('dim4', document.querySelector('[data-sec=dim4]'))">&larr; 上一维度</button>
+        <button class="btn-sm btn-gold" onclick="app.showSection('dim6', document.querySelector('[data-sec=dim6]'))">下一维度 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- DIM 6 -->
+    <div class="section" id="sec-dim6">
+      <div class="section-header">
+        <div class="section-icon">&#127807;</div>
+        <div class="section-meta">
+          <h2>维度六：食材好</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 10%</span>
+            <span class="badge badge-dim">4项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim6">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div id="items-dim6-1"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('dim5', document.querySelector('[data-sec=dim5]'))">&larr; 上一维度</button>
+        <button class="btn-sm btn-gold" onclick="app.showSection('dim7', document.querySelector('[data-sec=dim7]'))">下一维度 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- DIM 7 -->
+    <div class="section" id="sec-dim7">
+      <div class="section-header">
+        <div class="section-icon">&#128154;</div>
+        <div class="section-meta">
+          <h2>维度七：健康</h2>
+          <div class="meta-row">
+            <span class="badge badge-weight">权重 8%</span>
+            <span class="badge badge-dim">3项评估</span>
+          </div>
+        </div>
+        <div class="section-score-display">
+          <div class="score-num" id="score-dim7">&mdash;</div>
+          <div class="score-label">维度得分</div>
+        </div>
+      </div>
+      <div class="subdim">
+        <div id="items-dim7-1"></div>
+      </div>
+      <div style="padding:16px 24px 20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-sm btn-outline" style="color:var(--primary);border-color:var(--border);" onclick="app.showSection('dim6', document.querySelector('[data-sec=dim6]'))">&larr; 上一维度</button>
+        <button class="btn-sm btn-gold" onclick="app.showResult()">&#128202; 查看总分 &rarr;</button>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="score-panel">
+    <h3>实时评分概览</h3>
+
+    <div style="position:relative;">
+      <div class="total-score-circle" id="totalScoreCircle" style="--pct:0">
+        <div class="total-score-inner">
+          <div class="total-score-num" id="totalScoreNum">0</div>
+          <div class="total-score-max">/100分</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="score-level-badge" id="scoreLevelBadge">尚未开始评估</div>
+
+    <div class="progress-info" id="progressInfo">已评估 0 / 40 项</div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+
+    <div class="dim-bar-list" id="dimBarList"></div>
+
+    <button class="btn-submit" onclick="app.showResult()">&#128202; 生成评估报告</button>
+    <button class="btn-export" onclick="app.exportCSV()">&#11015; 导出 CSV 数据</button>
+    <button class="btn-export" style="background:#F3E5F5;color:#6A1B9A;border-color:#CE93D8;" onclick="window.open('songzan-admin.html','_blank')">&#128202; 后台管理数据</button>
+  </aside>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="modal-backdrop" id="resultModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>&#9968; 松赞餐饮体验评估报告</h2>
+      <p id="modalSubtitle">2026年 &middot; 评估结果</p>
+      <button class="modal-close" onclick="app.closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="result-total-row">
+        <div class="result-big-score" id="modalTotalScore">&mdash;</div>
+        <div class="result-score-meta">
+          <h3 id="modalLevel">&mdash;</h3>
+          <p id="modalInfo">&mdash;</p>
+          <p id="modalProgress" style="margin-top:4px;font-size:12px;"></p>
+        </div>
+      </div>
+      <div class="result-dim-grid" id="modalDimGrid"></div>
+      <div id="modalRecommendations" style="padding:14px;background:var(--gold-lighter);border-radius:8px;margin-bottom:16px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal btn-modal-secondary" onclick="app.saveRecord()">&#128190; 保存记录</button>
+      <button class="btn-modal btn-modal-secondary" onclick="app.exportCSV()">&#11015; 导出数据</button>
+      <button class="btn-modal btn-modal-secondary" onclick="window.print()">&#128424; 打印报告</button>
+      <button class="btn-modal btn-modal-primary" onclick="app.closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-backdrop" id="qrModal" onclick="if(event.target===this)app.closeQR()">
+  <div style="background:white;border-radius:16px;width:340px;max-width:95vw;padding:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <div style="font-size:20px;font-weight:700;color:var(--primary-dark);margin-bottom:8px;">&#127968; 松赞餐饮评估</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">扫描二维码直接进入评估系统</p>
+    <div id="qrBox" style="display:flex;justify-content:center;margin-bottom:16px;"></div>
+    <p style="font-size:11px;color:var(--text-muted);line-height:1.7;margin-bottom:16px;">将此二维码打印后张贴于餐厅<br>或通过微信/企业微信发送给评估人员</p>
+    <button class="btn-sm btn-gold" style="padding:10px 24px;width:100%;" onclick="app.closeQR()">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 管理员入口 -->
+<div class="admin-entry-bar">
+  <button onclick="window.open('songzan-admin.html','_blank')">&#128274; 管理员入口</button>
+</div>
+
+<script>
+const app = (function() {
+  // DATA
+  const DIMENSIONS = [
+    {
+      id: 'dim1', name: '景观好', icon: '\u9968', weight: 0.20,
+      subdims: [
+        {
+          id: 'dim1-1', name: '公共空间景观体验', weight: 0.40,
+          items: [
+            { id: 'LS-1.1.1', name: '核心景观的震撼力与独特性', hasNA: false,
+              criteria: {5:'景观具有地标性或"一生必看"级别的震撼力，空间设计最大化了景观的呈现，无任何遮挡。', 4:'景观非常优美，有显著特色，能给客人留下深刻印象。', 3:'景观良好，符合高端度假酒店的标准，但缺乏独一无二的记忆点。', 2:'景观视野受限，或景观本身较为普通。', 1:'景观被建筑物、杂物等严重遮挡，或窗外景观不佳。'} },
+            { id: 'LS-1.1.2', name: '空间设计与自然/人文景观的融合度', hasNA: false,
+              criteria: {5:'室内设计与室外景观实现了无缝融合，内外合一，营造沉浸式在地文化氛围。坐在此处，感觉自己是风景的一部分。', 4:'设计风格与景观协调，能有效衬托和延伸景观体验。', 3:'设计本身不错，但与外部景观的关联性不强，存在不协调元素。', 2:'设计风格与景观脱节，未能有效利用景观优势。', 1:'空间设计与景观存在冲突，破坏了整体美感。'} },
+            { id: 'LS-1.1.3', name: '氛围营造与舒适度', hasNA: false,
+              criteria: {5:'背景音乐、香氛、光线、家具布局等元素完美协同，营造宁静、松弛、高级的度假氛围。座位私密性与视野俱佳。', 4:'氛围营造得体，舒适度高。', 3:'基础氛围和舒适度达标，但细节有提升空间。', 2:'存在明显影响氛围的因素（噪音、异味、光线问题）。', 1:'空间环境嘈杂、不洁或家具破损，令人不适。'} },
+            { id: 'LS-1.1.4', name: '全天候及不同天气下的景观价值', hasNA: false,
+              criteria: {5:'无论晴天、雨天、晨间、黄昏，该空间都能展现出不同的美感，雨天或雾天甚至能提供独特宁静的观景体验。', 3:'晴天景观很好，但天气不佳时吸引力显著下降。', 1:'只有在特定天气和时间下才具有观赏价值。'} }
+          ]
+        },
+        {
+          id: 'dim1-2', name: '私密空间景观体验', weight: 0.35, optional: true, enabled: true,
+          items: [
+            { id: 'LS-1.2.1', name: '景观包房的选址与体验设计', hasNA: false,
+              criteria: {5:'包房的选址、窗景设计、室内陈设均围绕景观主题，创造出尊贵且极具仪式感的私密用餐体验。包房本身就是一道风景，坐下来就能独享绝景。', 4:'包房拥有绝佳景观，室内环境舒适，视野开阔，提供了高品质的私密用餐体验。', 3:'包房有景观，但室内设计普通，未能充分提升体验，有基本的私密性。', 2:'景观有限，或私密性不足，室内设计与景观脱节。', 1:'虽名为景观包房，但景观不佳或被严重遮挡，名不副实。'} },
+            { id: 'LS-1.2.2', name: '私密空间的氛围营造与细节', hasNA: false,
+              criteria: {5:'私密空间的灯光、软装、餐具、花艺等细节均精心设计，与外部景观形成呼应，营造出极致的私密高端感，每个细节都让人感受到用心。', 4:'私密空间整体氛围高雅，布置讲究，能让客人感受到尊贵礼遇。', 3:'私密空间整洁舒适，但在细节布置上较为平淡，缺乏特别惊喜。', 2:'私密空间基础条件尚可，但氛围营造明显不足，与公共区域差距不大。', 1:'私密空间布置简陋，或存在明显卫生和维护问题，损害体验。'} }
+          ]
+        },
+        {
+          id: 'dim1-3', name: '户外野餐景观体验与运营保障', weight: 0.25,
+          items: [
+            { id: 'LS-1.3.1', name: '野餐地点的独特性与美学价值', hasNA: true,
+              criteria: {5:'选址具有"秘境"般的独特性和排他性，风景绝美，能提供远离尘嚣、与自然完全融为一体的巅峰体验。', 4:'选址风景优美，人少清静，体验感佳。', 3:'选址风景不错，但可能较为大众化，或有其他游客。', 1:'选址普通，缺乏吸引力。'} },
+            { id: 'LS-1.3.2', name: '现场布置与氛围营造', hasNA: true,
+              criteria: {5:'现场布置极具风格和品质感，与环境完美融合，营造出电影场景般的浪漫氛围。餐具、食物摆放考究，细节充满惊喜。', 4:'布置得体、干净、舒适，能满足户外用餐的基本需求。', 3:'布置简单实用。', 2:'布置简陋或不舒适，影响用餐体验。', 1:'布置不洁或严重影响体验。'} },
+            { id: 'LS-1.3.3', name: '远距离出餐的运营流畅度与品质保障', hasNA: true,
+              criteria: {5:'尽管厨房距离很远，菜品（特别是热食）送达时依然保持着绝佳的温度和品相。整个服务过程无缝衔接。', 4:'菜品送达时基本保持品质，服务流程顺畅。', 3:'略有轻微的温度损失或延时，但总体可接受。', 2:'菜品送达时已冷或品相受损。', 1:'服务过程混乱、等待时间过长或菜品严重受损。'} },
+            { id: 'LS-1.3.4', name: '雨天或突发状况的应急预案', hasNA: false,
+              criteria: {5:'有成熟、高品质的雨天备案。服务人员提前、主动、优雅地与客人沟通备案选项，备案体验价值并未显著降低，甚至别有风味。', 4:'有雨天备案，能保证客人顺利用餐。', 3:'被动地在下雨后才告知客人备案，安排略显仓促。', 2:'备案方案简陋，或沟通生硬，引起客人不满。', 1:'没有雨天备案，导致体验被取消。'} }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'dim2', name: '服务有特质', icon: '\uD83D\uDE0D', weight: 0.20,
+      subdims: [
+        {
+          id: 'dim2-1', name: '本地人气质的展现', weight: 0.30,
+          items: [
+            { id: 'DS-2.1.1', name: '服务的真诚度（Sincerity）', hasNA: false,
+              criteria: {5:'员工的微笑、眼神交流和言语互动极其自然、温暖，能清晰感受到其发自内心的善意，服务充满人情味的真实互动。', 4:'员工友好、乐于助人，服务态度积极。', 3:'服务遵循标准，有礼貌，但略显程序化，缺乏情感连接。', 2:'服务态度冷淡、不耐烦或有敷衍迹象。', 1:'员工表现出明显的负面情绪或不尊重客人的行为。'} },
+            { id: 'DS-2.1.2', name: '质朴与纯粹感', hasNA: false,
+              criteria: {5:'员工的言行举止带有一种未经雕琢的纯朴感，不油滑、不套路。在交流中，他们更像一个本地朋友，而不是职业服务员。', 3:'服务专业，但风格偏向国际化、标准化的酒店服务，缺乏独特的质朴感。', 1:'服务方式过于商业化、技巧性过强，甚至有过度推销的倾向。'} },
+            { id: 'DS-2.1.3', name: '内在的快乐与热忱', hasNA: false,
+              criteria: {5:'能从员工的精神面貌和工作状态中，感受到他们对这份工作和所处环境的热爱。他们乐于分享，以积极充满活力的态度感染客人。', 4:'员工工作态度积极，精神饱满。', 3:'员工看起来只是在完成任务，缺乏工作热情，精神状态平平。', 2:'员工看起来疲惫、士气低落或心不在焉。', 1:'员工在客人面前抱怨或表现出对工作的不满。'} }
+          ]
+        },
+        {
+          id: 'dim2-2', name: '待客如家人的<em>情感连接</em>', weight: 0.30,
+          items: [
+            { id: 'DS-2.2.1', name: '超越本职的主动关怀', hasNA: false,
+              criteria: {5:'员工能敏锐观察到并主动关心客人的非餐饮需求（如主动递毯子、询问身体状况、提供姜茶），这种关怀是家人式的，而非服务式的。', 4:'能在客人提出需求时，给予热情周到的帮助。', 3:'仅在职责范围内提供服务，缺乏主动性。', 1:'对客人的额外需求表现出不耐烦或拒绝。'} },
+            { id: 'DS-2.2.2', name: '建立个人化连接', hasNA: false,
+              criteria: {5:'员工能记住客人的姓氏和偏好，并在后续服务中自然体现。交流中能像家人聊天一样，分享自己的生活或当地的故事。', 4:'能记住并称呼客人姓氏。', 3:'每次服务都像是第一次接触，缺乏连贯性和个性化。', 1:'对客人信息完全不了解，服务缺乏人情味。'} },
+            { id: 'DS-2.2.3', name: '告别与送行的温度', hasNA: false,
+              criteria: {5:'用餐结束时，员工的告别真诚而温暖，会说一些"路上小心"、"欢迎再来我们家玩"之类家人般的嘱咐，并目送客人离开。', 3:'标准的礼貌告别（如"谢谢光临，欢迎再次光临"）。', 1:'客人离开时无人理会或告别草率。'} }
+          ]
+        },
+        {
+          id: 'dim2-3', name: '在地文化气质的融入', weight: 0.25,
+          items: [
+            { id: 'DS-2.3.1', name: '文化故事的讲述者', hasNA: false,
+              criteria: {5:'员工不仅是服务员，更是文化向导。在介绍菜品或服务间隙，能自然、生动地讲述与食材、烹饪方式、本地节庆相关的文化故事。', 4:'能在被问及时，清晰介绍菜品相关的文化背景。', 3:'只能背诵菜单上关于菜品的标准化介绍。', 1:'对菜品背后的文化一无所知，或回答错误。'} },
+            { id: 'DS-2.3.2', name: '服务仪式与语言的文化呈现', hasNA: false,
+              criteria: {5:'服务流程中巧妙融入了具有本地特色的仪式或元素（如藏式敬酒方式、特定祝福语）。员工能使用一些简单的本地语言进行问候，真实可信。', 3:'服务流程标准化，没有融入特别的文化元素。', 1:'所谓的文化元素显得生硬、商业化，甚至不伦不类。'} },
+            { id: 'DS-2.3.3', name: '员工作为"活的文化"', hasNA: false,
+              criteria: {5:'员工本身（他们的服饰、气质、与客人分享的个人经历）就是酒店在地文化最真实的展现。其文化身份与旅行体验完美融合。', 3:'员工着统一制服，行为举止标准化，其个人文化背景未得到展现。', 1:'员工的气质与酒店的文化定位存在明显冲突。'} }
+          ]
+        },
+        {
+          id: 'dim2-4', name: '专业度的坚实基础', weight: 0.15,
+          items: [
+            { id: 'DS-2.4.1', name: '产品知识的掌握', hasNA: false,
+              criteria: {5:'对菜单上的所有菜品、酒水（食材来源、做法、口味、过敏原、文化背景）了如指掌，能提供精准、自信的推荐。', 3:'熟悉大部分菜品，但对一些细节或新品不确定，需要求助他人。', 1:'对菜单不熟，一问三不知，或提供错误信息。'} },
+            { id: 'DS-2.4.2', name: '服务流程的效率与优雅', hasNA: false,
+              criteria: {5:'从引位、点餐、上菜、撤盘到结账，所有环节流畅、高效且安静。服务节奏恰到好处，动作优雅、沉稳。', 3:'服务流程基本顺畅，但偶尔有脱节或不协调之处。', 1:'流程混乱，错漏频出（上错菜、漏单），严重影响用餐效率和体验。'} },
+            { id: 'DS-2.4.3', name: '仪容仪表与卫生标准', hasNA: false,
+              criteria: {5:'员工仪容仪表干净、整洁，精神焕发，符合松赞品牌形象。在服务中严格遵守卫生规范。', 3:'仪容仪表和卫生基本达标，无明显问题。', 1:'仪容不整或存在明显卫生问题。'} }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'dim3', name: '菜品稳定', icon: '\uD83C\uDF7D', weight: 0.16,
+      subdims: [
+        {
+          id: 'dim3-1', name: '综合品质的持久性', weight: 0.60,
+          items: [
+            { id: 'PQ-3.1.1', name: '核心菜品的口味一致性', hasNA: false,
+              criteria: {5:'多次抽样评测同一道招牌菜，其口味、调味、咸淡、火候几乎无任何可感知的差异。', 3:'多次评测中，口味存在轻微波动，但不影响整体体验。', 1:'同一道菜每次吃味道都有明显不同，品质失控。'} },
+            { id: 'PQ-3.1.2', name: '菜品呈现（摆盘与温度）的一致性', hasNA: false,
+              criteria: {5:'菜品的摆盘、份量、装饰以及上桌时的温度，在多次评测中始终保持高度一致和最佳状态。', 3:'摆盘和温度基本一致，但细节上偶有差异。', 1:'摆盘随意、份量时多时少，或上桌时温度不理想。'} },
+            { id: 'PQ-3.1.3', name: '核心食材品质的稳定性', hasNA: false,
+              criteria: {5:'无论何时到访，菜品所使用的核心食材均能保持顶级的品质、新鲜度和风味。', 3:'食材品质基本稳定，但偶尔会因季节或供应问题出现轻微下降。', 1:'食材品质波动大，有时出现不新鲜或等级较低的情况。'} }
+          ]
+        },
+        {
+          id: 'dim3-2', name: '作为旅行重要环节的体验连贯性', weight: 0.40,
+          items: [
+            { id: 'PQ-3.2.1', name: '餐饮体验与旅行节奏的契合度', hasNA: false,
+              criteria: {5:'餐饮安排与当天的旅行活动完美契合。例如，长途跋涉后提供温暖滋补的汤锅，轻松的午后则是精致的下午茶。', 3:'餐饮安排与旅行活动无明显关联，仅作为孤立的用餐环节。', 1:'餐饮安排与旅行节奏冲突（如活动紧张时却安排了耗时过长的正餐）。'} },
+            { id: 'PQ-3.2.2', name: '跨店体验的品牌一致性与个性化平衡', hasNA: false,
+              criteria: {5:'在不同分店用餐，能清晰感受到统一的松赞餐饮哲学（对在地食材的尊重、健康烹饪），同时每家店因所在地特色而拥有独特菜单，"和而不同"。', 3:'不同分店的餐饮水准和风格有一定差异，品牌连贯性感受不强。', 1:'各分店餐饮体验脱节，感觉像是完全无关的餐厅。'} }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'dim4', name: '主题明确有特色', icon: '\uD83C\uDFA8', weight: 0.14,
+      subdims: [
+        {
+          id: 'dim4-1', name: '在地食材的深度呈现', weight: 0.50,
+          items: [
+            { id: 'TH-4.1.1', name: '菜单的"在地化"指数', hasNA: false,
+              criteria: {5:'菜单中超过60%的菜品使用了酒店所在地区特色食材，并有明确的标示和介绍。', 3:'菜单中有一些本地特色菜，但仍以大众化的常规菜品为主。', 1:'菜单几乎无本地特色，与任何城市的酒店餐厅无异。'} },
+            { id: 'TH-4.1.2', name: '在地食材的创新与演绎', hasNA: false,
+              criteria: {5:'不仅是简单使用在地食材，更能通过创新的烹饪手法或与国际元素的融合，以现代、精致的方式重新演绎在地风味。', 4:'能以传统、地道的方式呈现好在地食材的风味。', 3:'使用了在地食材，但做法平庸，未能凸显其特色。', 1:'对在地食材的处理不当，破坏了其原有风味。'} },
+            { id: 'TH-4.1.3', name: '"员工所在地"食材的呈现', hasNA: true,
+              criteria: {5:'菜单中出现了"员工家乡菜"等特色菜品，源自员工家乡的烹饪传统，并由服务员亲自讲述其背后的故事，极具人情味和独特性。', 3:'服务员在交流中会提及自己的家乡饮食文化，但未体现在菜单上。', 1:'完全没有体现员工所在地的饮食文化。'} }
+          ]
+        },
+        {
+          id: 'dim4-2', name: '餐食主题与分店特色的差异化', weight: 0.50,
+          items: [
+            { id: 'TH-4.2.0', name: '菜品搭配的主题思路与层次感', hasNA: false,
+              criteria: {5:'每一餐的菜品搭配有清晰的主题与逻辑，冷热、荤素、轻重、口味层次递进合理，有明显的用餐叙事感，绝非菜品的简单堆砌。客人能感受到厨师/餐饮团队的策划用心。', 4:'菜品搭配整体合理，有一定层次感，主要菜品与配菜呼应，虽无强烈叙事感，但结构清晰、吃起来流畅。', 3:'菜品搭配基本均衡，荤素比例合理，但整体缺乏主题感，更像是各自独立菜品的拼凑，没有整体用餐叙事。', 2:'菜品搭配存在明显失衡（如过于油腻、口味雷同、主次不分），用餐体验不够流畅。', 1:'菜品搭配混乱，毫无逻辑，口味撞车或严重失衡，令客人困惑或不适。'} },
+            { id: 'TH-4.2.1', name: '一日三餐的主题策划', hasNA: false,
+              criteria: {5:'早餐、午餐、晚餐被赋予了清晰不同的主题（如早餐"元气唤醒"、午餐"轻盈简餐"、晚餐"风物盛宴"），每餐都有独特的叙事性。', 4:'三餐在菜品选择和服务形式上均有明显差异化，体现了对一日饮食节奏的用心策划。', 3:'三餐供应的菜品类型不同，但缺乏明确的主题感和叙事性。', 2:'三餐差异不明显，内容较为单调，缺乏层次。', 1:'三餐内容单调、重复，无明显区分，毫无策划感。'} },
+            { id: 'TH-4.2.2', name: '各分店餐饮主题的独特性', hasNA: false,
+              criteria: {5:'每家分店都有其独一无二的餐饮主题或招牌"名片"（如香格里拉的菌菇盛宴、茨中的葡萄酒晚宴），与酒店所在地的自然风物或文化紧密相连，不可复制。', 4:'分店有明显的地域特色菜品，客人能清楚感受到"这是某地才有的菜"，主题个性鲜明。', 3:'各分店菜单有少量差异，但缺乏一个统领性的强有力的独特主题。', 2:'各分店菜单差异不大，地域特色菜品比例偏少，主题感较弱。', 1:'各分店菜单高度雷同，缺乏地域辨识度。'} }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'dim5', name: '物超所值', icon: '\uD83D\uDC8E', weight: 0.12,
+      subdims: [
+        {
+          id: 'dim5-1', name: '价值感综合评估', weight: 1.0,
+          items: [
+            { id: 'VM-5.1', name: '定价的公平性与合理性', hasNA: false,
+              criteria: {5:'客人会觉得"虽然不便宜，但每一分钱都花得值"，价格与完整体验（顶级景观、独特服务、优质菜品、文化内涵）完全匹配。', 4:'价格略高，但考虑到整体体验，仍在可接受范围内。', 3:'价格与体验基本对等，无惊喜也无失望。', 2:'感觉定价偏高，性价比不足。', 1:'定价严重过高，与所提供的价值完全不符，有"被宰"的感觉。'} },
+            { id: 'VM-5.2', name: '"隐藏价值"的创造', hasNA: false,
+              criteria: {5:'在不经意处使用了极为优质或稀有的高级食材，但并未大肆宣传，让识货的客人感受到低调的奢华与诚意。', 3:'食材用料扎实，符合其价格定位。', 1:'菜品中存在以次充好或名不副实的情况。'} },
+            { id: 'VM-5.3', name: '餐具与器皿的品质感', hasNA: false,
+              criteria: {5:'使用的餐具、酒具、茶具、布草等，无论在材质、设计、手感还是品牌上，都具有极高的品质感，这些器皿本身就是审美体验的一部分。', 4:'餐具品质良好，干净且有一定设计感。', 3:'餐具为标准酒店用品，干净实用但无亮点。', 1:'餐具廉价、破损或有污渍。'} },
+            { id: 'VM-5.4', name: '免费提供物的价值感', hasNA: false,
+              criteria: {5:'免费提供的餐前小食、佐餐水、欢迎茶点等，品质和呈现都非常用心，毫不敷衍，让客人从一开始就感受到慷慨与诚意。', 3:'提供标准的免费项目。', 1:'未提供任何免费项目，或提供的项目品质低劣。'} }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'dim6', name: '食材好', icon: '\uD83C\uDF3F', weight: 0.10,
+      subdims: [
+        {
+          id: 'dim6-1', name: '食材品质综合评估', weight: 1.0,
+          items: [
+            { id: 'IG-6.1', name: '真材实料的可感知性', hasNA: false,
+              criteria: {5:'菜品调味克制，能清晰地品尝到食材本身卓越的本味、香气和质地。无需复杂烹饪，食材的优越性已一目了然。', 3:'能尝到食材的味道，但调味较重。', 1:'调味过重，完全掩盖了食材本来的味道，或食材本身风味寡淡。'} },
+            { id: 'IG-6.2', name: '食材的可追溯性与故事性', hasNA: false,
+              criteria: {5:'菜单或服务人员能清晰、生动地讲述核心食材的来源地、生长环境、采摘/养殖方式，甚至背后的人物故事，增加了客人的信任感和体验深度。', 3:'只能笼统地说明食材是"本地的"或"有机的"，但无法提供更多细节。', 1:'对食材来源一无所知。'} },
+            { id: 'IG-6.3', name: '对"上品"食材的追求', hasNA: false,
+              criteria: {5:'在同类食材中，能明显感知到松赞选择了更高等级、更稀有或特定产区的"上品"。例如，特定季节的头拨松茸、特定草场的小牦牛等。', 3:'食材品质符合良好标准，但未达到顶尖水平。', 1:'使用了等级普通或有瑕疵的食材。'} },
+            { id: 'IG-6.4', name: '时令与最佳赏味期', hasNA: false,
+              criteria: {5:'菜单严格遵循时令，频繁更新。所有时令食材都在其风味最饱满的最佳赏味期内供应，客人总能品尝到大自然最新鲜的馈赠。', 3:'菜单有季节性调整，但更新频率不高，或部分菜品使用了反季节食材。', 1:'菜单常年不变，大量使用非时令食材。'} }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'dim7', name: '健康', icon: '\uD83D\uDC9A', weight: 0.08,
+      subdims: [
+        {
+          id: 'dim7-1', name: '健康饮食综合评估', weight: 1.0,
+          items: [
+            { id: 'HE-7.1', name: '拒绝工业化调味品', hasNA: false,
+              criteria: {5:'菜品口味纯净、自然，后味干净。完全感受不到味精、鸡精等工业化调味品的痕迹。鲜味完全来自食材本身和天然提取物。', 3:'大部分菜品口味自然，但个别菜品可能少量使用了工业化调味品。', 1:'能明显尝到味精或复合调味酱的味道，口感单一，吃完口干。'} },
+            { id: 'HE-7.2', name: '健康的烹饪方式', hasNA: false,
+              criteria: {5:'菜单中蒸、煮、炖、凉拌等低温、少油的健康烹饪方式占有显著比例。即使是煎炒炸的菜品，也处理得油而不腻，火候精准。', 3:'菜单中各种烹饪方式均衡，但仍以重油、高温烹饪的菜品为主。', 1:'菜单菜品普遍油腻、过咸或过甜，烹饪方式不健康。'} },
+            { id: 'HE-7.3', name: '营养与食物搭配的考量', hasNA: false,
+              criteria: {5:'菜单设计明显考虑了营养均衡，确保荤素、粗细、酸碱的合理搭配。套餐或推荐组合体现了科学的配餐理念。', 3:'菜单提供多样选择，但需要客人自己进行营养搭配，酒店未主动引导。', 1:'菜单存在大量高热量、高脂肪、营养单一的菜品组合。'} }
+          ]
+        }
+      ]
+    }
+  ];
+
+  let privateSpaceEnabled = true;
+
+  // --- 酒店选择 ---
+  function onHotelChange(sel) {
+    var wrap = document.getElementById('hotelOtherWrap');
+    if (sel.value === '__other__') {
+      if (wrap) wrap.style.display = 'block';
+    } else {
+      if (wrap) wrap.style.display = 'none';
+    }
+    updateProgress();
+  }
+
+  // --- 私密空间可选开关 ---
+  function togglePrivateSpace() {
+    privateSpaceEnabled = !privateSpaceEnabled;
+    var body = document.getElementById('subdim-private-body');
+    var btn = document.getElementById('btn-private-toggle');
+    if (body) body.style.display = privateSpaceEnabled ? 'block' : 'none';
+    if (btn) {
+      btn.textContent = privateSpaceEnabled ? '✓ 此餐厅有私密包房' : '✗ 无私密包房（已关闭）';
+      btn.style.background = privateSpaceEnabled ? '#E8F5E9' : '#FFEBEE';
+      btn.style.color = privateSpaceEnabled ? '#2E7D32' : '#B71C1C';
+    }
+    // 重新分配权重
+    var w11, w12, w13;
+    if (privateSpaceEnabled) {
+      w11 = 0.40; w12 = 0.35; w13 = 0.25;
+    } else {
+      // 把35%平摊：公共+20%=60%，户外+15%=40%（保持6:4比例）
+      w11 = 0.60; w12 = 0; w13 = 0.40;
+    }
+    // 更新 DIMENSIONS 数据
+    DIMENSIONS[0].subdims[0].weight = w11;
+    DIMENSIONS[0].subdims[1].weight = w12;
+    DIMENSIONS[0].subdims[2].weight = w13;
+    // 更新页面显示
+    var e11 = document.getElementById('w-dim1-1');
+    var e12 = document.getElementById('w-dim1-2');
+    var e13 = document.getElementById('w-dim1-3');
+    if (e11) e11.textContent = Math.round(w11*100) + '%';
+    if (e12) e12.textContent = Math.round(w12*100) + '%';
+    if (e13) e13.textContent = Math.round(w13*100) + '%';
+    recalcAll();
+    showToast(privateSpaceEnabled ? '已启用私密空间评估，权重已恢复' : '已关闭私密空间，权重已重新分配');
+  }
+
+  // --- 二维码 ---
+  // COS 静态托管线上地址（扫码直接跳转到线上系统）
+  var COS_BASE_URL = 'https://tsering-1430983566.cos.ap-guangzhou.myqcloud.com';
+
+  function showQR() {
+    var modal = document.getElementById('qrModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    var box = document.getElementById('qrBox');
+    if (box) {
+      box.innerHTML = '';
+      // 始终使用 COS 线上 URL（确保手机扫码能访问）
+      var rawUrl = window.location.href.split('?')[0].split('#')[0];
+      var filename = rawUrl.split('/').pop() || 'songzan-rating.html';
+      var url;
+      if (rawUrl.indexOf('myqcloud.com') > -1 || rawUrl.indexOf('cos.') > -1) {
+        // 已经在 COS 线上环境，用当前 URL
+        url = rawUrl;
+      } else if (rawUrl.startsWith('file://') || rawUrl.startsWith('http://192.168') || rawUrl.startsWith('http://127.0.0.1')) {
+        // 本地/局域网环境，切换到 COS 线上地址
+        url = COS_BASE_URL + '/' + filename;
+      } else {
+        // 其他 HTTP 环境（如自定义域名）
+        url = rawUrl;
+      }
+      // 使用 QRCode.js 库生成二维码
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(box, {
+          text: url,
+          width: 200,
+          height: 200,
+          colorDark: '#5C2E00',
+          colorLight: '#FAF6EE',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        // fallback: 使用 qrserver API
+        var img = document.createElement('img');
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '&color=5C2E00&bgcolor=FAF6EE';
+        img.style.borderRadius = '8px';
+        img.style.border = '4px solid #E8D5A3';
+        box.appendChild(img);
+      }
+    }
+  }
+
+  function closeQR() {
+    var modal = document.getElementById('qrModal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  // --- 云端 API 配置（Vercel Serverless Function）---
+  const API_BASE_URL = '/api/ratings';
+
+  // --- 保存记录到云端 ---
+  async function saveRecord() {
+    var hotel = document.getElementById('inf-hotel');
+    var hotelVal = hotel ? hotel.value : '';
+    if (hotelVal === '__other__') {
+      var other = document.getElementById('inf-hotel-other');
+      hotelVal = other ? other.value : '其他';
+    }
+    var record = {
+      hotel: hotelVal,
+      date: document.getElementById('inf-date') ? document.getElementById('inf-date').value : '',
+      meal: document.getElementById('inf-meal') ? document.getElementById('inf-meal').value : '',
+      evaluator: document.getElementById('inf-name') ? document.getElementById('inf-name').value : '',
+      role: document.getElementById('inf-role') ? document.getElementById('inf-role').value : '',
+      weather: document.getElementById('inf-weather') ? document.getElementById('inf-weather').value : '',
+      note: document.getElementById('inf-note') ? document.getElementById('inf-note').value : '',
+      totalScore: getTotalScore().toFixed(1),
+      level: getLevel(getTotalScore()),
+      scores: Object.assign({}, scores),
+      notes: Object.assign({}, notes),
+      privateSpaceEnabled: privateSpaceEnabled,
+      dimScores: DIMENSIONS.map(function(d) {
+        return { id: d.id, name: d.name, score: getDimScore(d.id).toFixed(2) };
+      }),
+      savedAt: new Date().toLocaleString('zh-CN')
+    };
+    record.id = Date.now();
+
+    // 1. 始终先保存到 localStorage（降级保障）
+    var localKey = 'songzan_ratings';
+    var localData = [];
+    try { localData = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch(e) {}
+    localData.push(record);
+    try { localStorage.setItem(localKey, JSON.stringify(localData)); } catch(e) {}
+
+    // 2. 尝试保存到 Vercel API
+    var savedToCloud = false;
+    var scfReady = API_BASE_URL && API_BASE_URL.indexOf('PASTE_YOUR') === -1;
+    if (scfReady) {
+      showToast('☁️ 正在保存到云端...');
+      try {
+        var resp = await fetch(API_BASE_URL + '?action=save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save', record: record })
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var result = await resp.json();
+        if (result.success) savedToCloud = true;
+      } catch(e) {
+        console.error('API save failed:', e);
+      }
+    }
+
+    // 3. 显示结果
+    if (savedToCloud) {
+      showToast('✅ 已保存到云端＋本地！');
+    } else if (scfReady) {
+      showToast('⚠️ 云端保存失败，已保存到本地');
+    } else {
+      showToast('✅ 已保存到本地（未配置云端）');
+    }
+    closeModal();
+  }
+
+  const scores = {};
+  const notes = {};
+
+  // --- render ---
+  function renderAll() {
+    DIMENSIONS.forEach(function(dim) {
+      dim.subdims.forEach(function(sub) {
+        var container = document.getElementById('items-' + sub.id);
+        if (!container) return;
+        var html = '';
+        sub.items.forEach(function(item) {
+          html += buildItemHTML(item);
+        });
+        container.innerHTML = html;
+      });
+    });
+    buildDimBars();
+    setTodayDate();
+  }
+
+  function buildItemHTML(item) {
+    var scoreLabels = {5:'卓越', 4:'优秀', 3:'合格', 2:'待改进', 1:'不可接受'};
+    var criteriaHTML = '';
+    [5,4,3,2,1].forEach(function(s) {
+      if (item.criteria[s]) {
+        criteriaHTML += '<div class="criteria-score-line cs' + s + '"><strong>' + s + '分（' + scoreLabels[s] + '）：</strong>' + item.criteria[s] + '</div>';
+      }
+    });
+
+    var naBtn = item.hasNA ? '<button class="rating-btn" data-id="' + item.id + '" data-score="na" onclick="app.setScore(\'' + item.id + '\',\'na\')">N/A</button>' : '';
+
+    var btnRow = '';
+    [5,4,3,2,1].forEach(function(s) {
+      btnRow += '<button class="rating-btn" data-id="' + item.id + '" data-score="' + s + '" onclick="app.setScore(\'' + item.id + '\',' + s + ')">' + s + '</button>';
+    });
+
+    return '<div class="eval-item" id="evalitem-' + item.id + '">' +
+      '<div class="eval-item-header">' +
+        '<span class="eval-id">' + item.id + '</span>' +
+        '<span class="eval-name">' + item.name + '</span>' +
+        '<span class="current-score-pill" id="pill-' + item.id + '">未评分</span>' +
+      '</div>' +
+      '<div class="rating-row">' + btnRow + naBtn + '</div>' +
+      '<div class="criteria-toggle">' +
+        '<button class="criteria-btn" onclick="app.toggleCriteria(\'crit-' + item.id + '\', this)">&#9654; 查看评分标准说明</button>' +
+      '</div>' +
+      '<div class="criteria-content" id="crit-' + item.id + '">' + criteriaHTML + '</div>' +
+      '<div class="note-area">' +
+        '<textarea placeholder="备注（可选）：具体观察或改进建议..." oninput="app.noteInput(\'' + item.id + '\', this.value)" rows="2"></textarea>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function buildDimBars() {
+    var container = document.getElementById('dimBarList');
+    if (!container) return;
+    var html = '';
+    DIMENSIONS.forEach(function(dim) {
+      html += '<div class="dim-bar-item">' +
+        '<div class="dim-bar-header">' +
+          '<span class="dim-bar-name">' + dim.icon + ' ' + dim.name + '</span>' +
+          '<span class="dim-bar-score" id="dimbar-score-' + dim.id + '">&mdash;</span>' +
+        '</div>' +
+        '<div class="dim-bar-track"><div class="dim-bar-fill" id="dimbar-fill-' + dim.id + '" style="width:0%"></div></div>' +
+      '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  // --- scoring ---
+  function setScore(itemId, score) {
+    scores[itemId] = score; // number or 'na'
+
+    // reset all buttons for this item
+    var allBtns = document.querySelectorAll('[data-id="' + itemId + '"]');
+    allBtns.forEach(function(b) { b.className = 'rating-btn'; });
+
+    // activate clicked button
+    allBtns.forEach(function(b) {
+      var bs = b.getAttribute('data-score');
+      if (bs === String(score) || (score === 'na' && bs === 'na')) {
+        b.classList.add(score === 'na' ? 'active-na' : 'active-' + score);
+      }
+    });
+
+    // update pill
+    var pill = document.getElementById('pill-' + itemId);
+    if (pill) {
+      if (score === 'na') {
+        pill.textContent = 'N/A';
+        pill.className = 'current-score-pill';
+      } else {
+        var labels = {5:'卓越 ★★★★★', 4:'优秀 ★★★★', 3:'合格 ★★★', 2:'待改进 ★★', 1:'不可接受 ★'};
+        pill.textContent = labels[score] || score;
+        pill.className = 'current-score-pill s' + score;
+      }
+    }
+
+    // mark item
+    var itemEl = document.getElementById('evalitem-' + itemId);
+    if (itemEl) itemEl.classList.add('scored');
+
+    recalcAll();
+  }
+
+  function recalcAll() {
+    var totalAnswered = 0;
+    var totalItems = 0;
+
+    DIMENSIONS.forEach(function(dim) {
+      var dimScore = 0;
+      dim.subdims.forEach(function(sub) {
+        // 如果是私密空间子维度且已关闭，跳过
+        if (sub.id === 'dim1-2' && !privateSpaceEnabled) return;
+        var subScores = [];
+        sub.items.forEach(function(item) {
+          totalItems++;
+          var s = scores[item.id];
+          if (s !== undefined && s !== 'na') {
+            subScores.push(Number(s));
+            totalAnswered++;
+          } else if (s === 'na') {
+            totalAnswered++;
+          }
+        });
+        var subAvg = subScores.length > 0 ? subScores.reduce(function(a,b){return a+b;}, 0) / subScores.length : null;
+        if (subAvg !== null) {
+          dimScore += subAvg * sub.weight;
+        }
+      });
+
+      // update section score display
+      var dimDisplay = dimScore > 0 ? dimScore.toFixed(1) : '\u2014';
+      var el = document.getElementById('score-' + dim.id);
+      if (el) el.textContent = dimScore > 0 ? dimScore.toFixed(1) : '\u2014';
+
+      // update sidebar
+      var sidebarItem = document.querySelector('[data-sec="' + dim.id + '"]');
+      if (sidebarItem) {
+        var scoreSp = sidebarItem.querySelector('.dim-score');
+        if (!scoreSp) {
+          scoreSp = document.createElement('span');
+          scoreSp.className = 'dim-score';
+          scoreSp.id = 'sidebar-score-' + dim.id;
+          sidebarItem.querySelector('.dim-weight').after(scoreSp);
+        }
+        if (dimScore > 0) {
+          scoreSp.textContent = dimScore.toFixed(1) + '/5';
+          sidebarItem.classList.add('scored');
+        }
+      }
+
+      // update bar
+      var barFill = document.getElementById('dimbar-fill-' + dim.id);
+      var barScore = document.getElementById('dimbar-score-' + dim.id);
+      if (barFill) barFill.style.width = dimScore > 0 ? (dimScore / 5 * 100).toFixed(0) + '%' : '0%';
+      if (barScore) barScore.textContent = dimScore > 0 ? dimScore.toFixed(1) + '/5' : '\u2014';
+    });
+
+    // total
+    var totalScore = getTotalScore();
+    var total100 = totalScore.toFixed(1);
+
+    var totalNum = document.getElementById('totalScoreNum');
+    if (totalNum) totalNum.textContent = totalAnswered > 0 ? total100 : '0';
+
+    var circle = document.getElementById('totalScoreCircle');
+    if (circle) circle.style.setProperty('--pct', totalAnswered > 0 ? total100 : '0');
+
+    var badge = document.getElementById('scoreLevelBadge');
+    if (badge) badge.textContent = totalAnswered > 0 ? getLevel(parseFloat(total100)) : '尚未开始评估';
+    if (badge && totalAnswered > 0) {
+      var c = getLevelColor(parseFloat(total100));
+      badge.style.background = c;
+      badge.style.color = '#fff';
+    } else if (badge) {
+      badge.style.background = '';
+      badge.style.color = '';
+    }
+
+    updateProgress(totalAnswered, totalItems);
+  }
+
+  function getDimScore(dimId) {
+    var dim = null;
+    DIMENSIONS.forEach(function(d){ if(d.id === dimId) dim = d; });
+    if (!dim) return 0;
+    var dimScore = 0;
+    dim.subdims.forEach(function(sub) {
+      if (sub.id === 'dim1-2' && !privateSpaceEnabled) return;
+      var subScores = [];
+      sub.items.forEach(function(item) {
+        var s = scores[item.id];
+        if (s !== undefined && s !== 'na') subScores.push(Number(s));
+      });
+      var subAvg = subScores.length > 0 ? subScores.reduce(function(a,b){return a+b;},0) / subScores.length : 0;
+      dimScore += subAvg * sub.weight;
+    });
+    return dimScore;
+  }
+
+  function getTotalScore() {
+    var totalScore = 0;
+    DIMENSIONS.forEach(function(dim) {
+      totalScore += getDimScore(dim.id) * dim.weight;
+    });
+    return (totalScore / 5) * 100;
+  }
+
+  function getLevel(score) {
+    if (score >= 90) return '\u2B50\u2B50\u2B50\u2B50\u2B50 极致松赞体验';
+    if (score >= 80) return '\u2B50\u2B50\u2B50\u2B50 优秀\u2014\u2014符合高标准';
+    if (score >= 70) return '\u2B50\u2B50\u2B50 良好\u2014\u2014达标但有提升空间';
+    if (score >= 60) return '\u2B50\u2B50 待改进\u2014\u2014存在明显不足';
+    return '\u2B50 不达标\u2014\u2014需立即整改';
+  }
+
+  function getLevelColor(score) {
+    if (score >= 90) return '#1B5E20';
+    if (score >= 80) return '#33691E';
+    if (score >= 70) return '#F57F17';
+    if (score >= 60) return '#E65100';
+    return '#B71C1C';
+  }
+
+  // --- navigation ---
+  function showSection(secId, navItem) {
+    document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+    document.querySelectorAll('.sidebar-item').forEach(function(i){ i.classList.remove('active'); });
+    var sec = document.getElementById('sec-' + secId);
+    if (sec) sec.classList.add('active');
+    if (navItem) navItem.classList.add('active');
+    var mc = document.getElementById('mainContent');
+    if (mc) mc.scrollTo({top:0, behavior:'smooth'});
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function toggleCriteria(id, btn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+    btn.textContent = el.classList.contains('open') ? '\u25BC 收起评分标准' : '\u25B6 查看评分标准说明';
+  }
+
+  // --- progress ---
+  function updateProgress(answered, total) {
+    if (answered === undefined) {
+      answered = 0; total = 0;
+      DIMENSIONS.forEach(function(dim) {
+        dim.subdims.forEach(function(sub) {
+          sub.items.forEach(function(item) {
+            total++;
+            if (scores[item.id] !== undefined) answered++;
+          });
+        });
+      });
+    }
+    var pct = total > 0 ? Math.round(answered / total * 100) : 0;
+    var bar = document.getElementById('progressBar');
+    var info = document.getElementById('progressInfo');
+    if (bar) bar.style.width = pct + '%';
+    if (info) info.textContent = '\u5df2\u8bc4\u4f30 ' + answered + ' / ' + total + ' \u9879\uff08' + pct + '%\uff09';
+  }
+
+  function setTodayDate() {
+    var d = document.getElementById('inf-date');
+    if (d && !d.value) {
+      var today = new Date();
+      var mm = String(today.getMonth() + 1).padStart(2, '0');
+      var dd = String(today.getDate()).padStart(2, '0');
+      d.value = today.getFullYear() + '-' + mm + '-' + dd;
+    }
+  }
+
+  function noteInput(itemId, val) {
+    notes[itemId] = val;
+  }
+
+  // --- result modal ---
+  function showResult() {
+    var total = getTotalScore();
+    var hotel = document.getElementById('inf-hotel').value || '\u672a\u586b\u5199';
+    var meal = document.getElementById('inf-meal').value || '\u672a\u586b\u5199';
+    var date = document.getElementById('inf-date').value || '\u672a\u586b\u5199';
+    var name = document.getElementById('inf-name').value || '\u672a\u586b\u5199';
+    var role = document.getElementById('inf-role').value || '\u672a\u586b\u5199';
+
+    var answered = 0, totalItems = 0;
+    DIMENSIONS.forEach(function(dim) {
+      dim.subdims.forEach(function(sub) {
+        sub.items.forEach(function(item) {
+          totalItems++;
+          if (scores[item.id] !== undefined) answered++;
+        });
+      });
+    });
+
+    var ts = document.getElementById('modalTotalScore');
+    if (ts) { ts.textContent = total.toFixed(1); ts.style.color = getLevelColor(total); }
+
+    var lvl = document.getElementById('modalLevel');
+    if (lvl) lvl.textContent = getLevel(total);
+
+    var info = document.getElementById('modalInfo');
+    if (info) info.textContent = hotel + ' \u00b7 ' + meal + ' \u00b7 ' + date;
+
+    var prog = document.getElementById('modalProgress');
+    if (prog) prog.textContent = '\u8bc4\u4f30\u4eba\uff1a' + name + '\uff08' + role + '\uff09 \u00b7 \u5b8c\u6210\u7387\uff1a' + answered + '/' + totalItems + ' \u9879';
+
+    var sub = document.getElementById('modalSubtitle');
+    if (sub) sub.textContent = date + ' \u00b7 ' + hotel + ' \u00b7 ' + role + ' \u8bc4\u4f30';
+
+    // dim grid
+    var gridHTML = '';
+    DIMENSIONS.forEach(function(dim) {
+      var ds = getDimScore(dim.id);
+      var ds100 = (ds / 5 * 100).toFixed(0);
+      var contribution = (ds * dim.weight / 5 * 100).toFixed(1);
+      gridHTML += '<div class="result-dim-card">' +
+        '<div class="rdim-name">' + dim.icon + ' ' + dim.name + ' <span style="opacity:.6;font-size:11px;">(' + (dim.weight*100).toFixed(0) + '%\u6743\u91cd)</span></div>' +
+        '<div class="rdim-score-row">' +
+          '<span class="rdim-score" style="color:' + getLevelColor(parseFloat(ds100)) + ';">' + ds.toFixed(2) + '</span>' +
+          '<span class="rdim-max">/5 \u00b7 \u8d21\u732e ' + contribution + '\u5206</span>' +
+        '</div>' +
+        '<div class="rdim-bar"><div class="rdim-bar-fill" style="width:' + Math.min(100, ds/5*100).toFixed(0) + '%;background:' + getLevelColor(parseFloat(ds100)) + ';"></div></div>' +
+      '</div>';
+    });
+    var grid = document.getElementById('modalDimGrid');
+    if (grid) grid.innerHTML = gridHTML;
+
+    // recommendations
+    var weakDims = DIMENSIONS.filter(function(d) { return getDimScore(d.id) < 3 && getDimScore(d.id) > 0; })
+      .sort(function(a,b){ return getDimScore(a.id) - getDimScore(b.id); });
+    var recHTML = '<div style="font-size:13px;font-weight:700;color:var(--primary-dark);margin-bottom:8px;">\uD83D\uDCCE \u91CD\u70B9\u5173\u6CE8\u5EFA\u8BAE</div>';
+    if (weakDims.length > 0) {
+      weakDims.forEach(function(d) {
+        recHTML += '<div style="font-size:12px;color:var(--text);margin-bottom:4px;">\u2022 <strong>' + d.icon + ' ' + d.name + '</strong>\uff1a\u5f97\u5206\u504f\u4f4e\uff08' + getDimScore(d.id).toFixed(2) + '/5\uff09\uff0c\u5efa\u8bae\u91cd\u70b9\u6539\u8fdb\u3002</div>';
+      });
+    } else if (answered < totalItems * 0.5) {
+      recHTML += '<div style="font-size:12px;color:var(--text-muted);">\u8bf7\u5b8c\u6210\u66f4\u591a\u8bc4\u4f30\u9879\u4ee5\u83b7\u53d6\u6709\u6548\u6539\u8fdb\u5efa\u8bae\u3002</div>';
+    } else {
+      recHTML += '<div style="font-size:12px;color:#2E7D32;">\u2705 \u5f53\u524d\u5404\u7ef4\u5ea6\u5f97\u5206\u5747\u5728\u5408\u683c\u7ebf\u4ee5\u4e0a\uff0c\u7ee7\u7eed\u4fdd\u6301\u5e76\u5bfb\u627e\u521b\u9020"\u677e\u8d5e\u65f6\u523b"\u7684\u673a\u4f1a\u3002</div>';
+    }
+    var rec = document.getElementById('modalRecommendations');
+    if (rec) rec.innerHTML = recHTML;
+
+    var modal = document.getElementById('resultModal');
+    if (modal) modal.classList.add('open');
+  }
+
+  function closeModal() {
+    var modal = document.getElementById('resultModal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  // --- export csv ---
+  function exportCSV() {
+    var hotel = document.getElementById('inf-hotel').value || '';
+    var date = document.getElementById('inf-date').value || '';
+    var meal = document.getElementById('inf-meal').value || '';
+    var name = document.getElementById('inf-name').value || '';
+    var role = document.getElementById('inf-role').value || '';
+
+    var BOM = '\uFEFF';
+    var csv = BOM;
+    csv += '松赞餐饮体验评估报告\n';
+    csv += '酒店/餐厅,' + hotel + '\n';
+    csv += '评估日期,' + date + '\n';
+    csv += '餐次,' + meal + '\n';
+    csv += '评估人,' + name + '\n';
+    csv += '角色,' + role + '\n';
+    csv += '总分,' + getTotalScore().toFixed(1) + '\n\n';
+    csv += '维度,子维度,评估项ID,评估项目,得分,备注\n';
+
+    DIMENSIONS.forEach(function(dim) {
+      var ds = getDimScore(dim.id).toFixed(2);
+      dim.subdims.forEach(function(sub) {
+        sub.items.forEach(function(item) {
+          var s = scores[item.id];
+          var scoreStr = s === undefined ? '未评' : s === 'na' ? 'N/A' : String(s);
+          var noteStr = (notes[item.id] || '').replace(/,/g, '，').replace(/\n/g, ' ');
+          csv += dim.name + '(' + (dim.weight*100).toFixed(0) + '%)，' + sub.name + '，"' + item.name + '"，' + scoreStr + '，"' + noteStr + '"\n';
+        });
+      });
+      csv += ',,,,维度平均,' + ds + '\n';
+    });
+
+    var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '松赞餐饮评估_' + hotel + '_' + date + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('\u2705 CSV 文件已下载');
+  }
+
+  // --- clear ---
+  function clearAll() {
+    if (!confirm('\u786e\u8ba4\u6e05\u7a7a\u6240\u6709\u8bc4\u5206\u6570\u636e\u5e76\u91cd\u65b0\u5f00\u59cb\uff1f')) return;
+    Object.keys(scores).forEach(function(k){ delete scores[k]; });
+    Object.keys(notes).forEach(function(k){ delete notes[k]; });
+
+    document.querySelectorAll('.rating-btn').forEach(function(b){ b.className = 'rating-btn'; });
+    document.querySelectorAll('.current-score-pill').forEach(function(p) {
+      p.textContent = '未评分';
+      p.className = 'current-score-pill';
+    });
+    document.querySelectorAll('.eval-item').forEach(function(i){ i.classList.remove('scored'); });
+    document.querySelectorAll('.criteria-content').forEach(function(c){ c.classList.remove('open'); });
+    document.querySelectorAll('.criteria-btn').forEach(function(b){ b.textContent = '\u25B6 查看评分标准说明'; });
+    document.querySelectorAll('.note-area textarea').forEach(function(t){ t.value = ''; });
+
+    recalcAll();
+    showToast('\uD83E\uDDF5 已清空所有评分');
+  }
+
+  // --- toast ---
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2500);
+  }
+
+  // --- init ---
+  document.addEventListener('DOMContentLoaded', function() {
+    renderAll();
+    recalcAll();
+    var modal = document.getElementById('resultModal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+      });
+    }
+  });
+
+  // public API
+  return {
+    renderAll: renderAll,
+    buildItemHTML: buildItemHTML,
+    buildDimBars: buildDimBars,
+    setScore: setScore,
+    recalcAll: recalcAll,
+    getDimScore: getDimScore,
+    getTotalScore: getTotalScore,
+    showSection: showSection,
+    toggleCriteria: toggleCriteria,
+    updateProgress: updateProgress,
+    setTodayDate: setTodayDate,
+    noteInput: noteInput,
+    showResult: showResult,
+    closeModal: closeModal,
+    exportCSV: exportCSV,
+    clearAll: clearAll,
+    showToast: showToast,
+    onHotelChange: onHotelChange,
+    togglePrivateSpace: togglePrivateSpace,
+    showQR: showQR,
+    closeQR: closeQR,
+    saveRecord: saveRecord
+  };
+})();
+</script>
+
+<!-- 管理员入口 -->
+<div class="admin-entry-bar">
+  <button onclick="window.open('songzan-admin.html','_blank')">&#128274; 管理员入口</button>
+</div>
+
+</body>
+</html>

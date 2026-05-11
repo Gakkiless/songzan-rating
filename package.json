@@ -1,0 +1,11 @@
+{
+  "name": "songzan-rating",
+  "version": "1.0.0",
+  "description": "松赞餐饮评估系统",
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.14.6"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

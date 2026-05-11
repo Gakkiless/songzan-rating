@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/songzan-admin.html" },
+    { "source": "/rating", "destination": "/songzan-rating.html" },
+    { "source": "/", "destination": "/songzan-rating.html" }
+  ]
+}
