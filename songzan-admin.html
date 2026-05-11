@@ -246,44 +246,32 @@ const adminLogin = (function(){
     return false;
   }
 
-  async function doLogin() {
+  function doLogin() {
     var pwd = document.getElementById('loginPwd');
     var errEl = document.getElementById('loginErr');
     if (!pwd.value.trim()) {
       errEl.textContent = '请输入密码'; errEl.style.display='block';
       return;
     }
-    // 先尝试云端验证
-    try {
-      var res = await fetch(API_BASE + '?action=login', {
+    // 本地先校验密码
+    if (pwd.value !== 'songzan2026') {
+      errEl.textContent = '密码错误，请重试';
+      errEl.style.display='block'; pwd.value=''; pwd.focus();
+      return;
+    }
+    // 密码正确 → 立即进入
+    localStorage.setItem(LS_KEY, VALID_TOKEN);
+    errEl.style.display='none';
+    document.getElementById('loginOverlay').classList.add('hidden');
+    admin.refresh();
+    // 异步同步到云端（不阻塞）
+    (function(){
+      fetch(API_BASE + '?action=login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd.value })
-      });
-      var data = await res.json();
-      if (data.success && data.token === VALID_TOKEN) {
-        localStorage.setItem(LS_KEY, VALID_TOKEN);
-        errEl.style.display='none';
-        document.getElementById('loginOverlay').classList.add('hidden');
-        admin.refresh(); // 登录成功后加载数据
-        return;
-      }
-      errEl.textContent = data.error || '密码错误，请重试';
-      errEl.style.display='block'; pwd.value=''; pwd.focus();
-      return;
-    } catch(e) {
-      console.warn('登录网络异常:', e);
-    }
-    // 离线降级：前端本地校验
-    if (pwd.value === 'songzan2026') {
-      localStorage.setItem(LS_KEY, VALID_TOKEN);
-      errEl.style.display='none';
-      document.getElementById('loginOverlay').classList.add('hidden');
-      admin.refresh(); // 登录成功后加载数据
-    } else {
-      errEl.textContent = '网络异常或密码错误';
-      errEl.style.display='block';
-    }
+      }).catch(function(e){ console.warn('云端登录同步失败:', e); });
+    })();
   }
 
   function logout() {
