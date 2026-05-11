@@ -544,13 +544,11 @@
     }
 
     /* 基本信息：移动端表单自适应 */
-    #sec-info .section-header { flex-wrap: wrap; }
-    #sec-info .section-meta { margin-right: auto; }
-    #sec-info > div[style*="padding: 24px"] { padding: 16px 12px !important; }
-    #sec-info > div[style*="display:grid"] {
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
+    .info-form-body { padding: 16px 12px !important; }
+    .info-form-grid {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 12px !important;
+      margin-bottom: 12px !important;
     }
     #sec-info label { font-size: 12px !important; }
     #sec-info select, #sec-info input[type=text], #sec-info input[type=date], #sec-info textarea {
@@ -558,7 +556,7 @@
       padding: 8px 10px !important;
     }
     /* 评估日期在手机上单独一行 */
-    #sec-info > div[style*="display:grid"] > div:nth-child(2) {
+    .info-form-grid > div:nth-child(2) {
       grid-column: 1 / -1;
     }
   }
@@ -694,8 +692,8 @@
           </div>
         </div>
       </div>
-      <div style="padding: 24px;">
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px;">
+      <div style="padding: 24px;" class="info-form-body">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px;" class="info-form-grid">
           <div>
             <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">&#127968; 酒店 / 餐厅</label>
             <select id="inf-hotel" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;" onchange="app.onHotelChange(this)">
