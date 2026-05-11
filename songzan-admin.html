@@ -233,7 +233,7 @@ input, textarea, select { -webkit-touch-callout: default; -webkit-user-select: t
 const adminLogin = (function(){
   const VALID_TOKEN = 'sz_admin_2026_valid';
   const LS_KEY = 'songzan_admin_token';
-  const API_BASE = '/api/ratings';
+  const API_BASE = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
 
   function check() {
     var token = localStorage.getItem(LS_KEY);
@@ -253,7 +253,7 @@ const adminLogin = (function(){
       return;
     }
     try {
-      var res = await fetch(API_BASE + '/?action=login', {
+      var res = await fetch(API_BASE + '?action=login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pwd.value })
@@ -319,7 +319,7 @@ const admin = (function(){
   var charts = {};
 
   // --- 云端 API 配置（SCF 云函数触发器 URL）---
-  const API_BASE_URL = '/api/ratings';
+  const API_BASE_URL = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
 
   async function loadRecords() {
     var all = [];

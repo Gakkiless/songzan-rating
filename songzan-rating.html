@@ -1310,8 +1310,8 @@ const app = (function() {
   }
 
   // --- 二维码 ---
-  // COS 静态托管线上地址（扫码直接跳转到线上系统）
-  var COS_BASE_URL = 'https://tsering-1430983566.cos.ap-guangzhou.myqcloud.com';
+  // GitHub Pages 线上地址（HTTPS，扫码直接打开不下载）
+  var COS_BASE_URL = 'https://gakkiless.github.io/songzan-rating';
 
   function showQR() {
     var modal = document.getElementById('qrModal');
@@ -1360,8 +1360,8 @@ const app = (function() {
     if (modal) modal.classList.remove('open');
   }
 
-  // --- 云端 API 配置（Vercel Serverless Function）---
-  const API_BASE_URL = '/api/ratings';
+  // --- 云端 API 配置（SCF 云函数 + 函数URL）---
+  const API_BASE_URL = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
 
   // --- 保存记录到云端 ---
   async function saveRecord() {
