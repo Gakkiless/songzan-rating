@@ -1413,10 +1413,7 @@ const app = (function() {
     if (modal) modal.classList.remove('open');
   }
 
-  // --- 云端 API 配置（SCF 云函数 + 函数URL）---
-  const API_BASE_URL = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
-
-  // --- 保存记录到云端 ---
+  // --- 保存记录到本地 ---
   async function saveRecord() {
     var hotel = document.getElementById('inf-hotel');
     var hotelVal = hotel ? hotel.value : '';
@@ -1444,40 +1441,14 @@ const app = (function() {
     };
     record.id = Date.now();
 
-    // 1. 保存到 localStorage（本地存储）
+    // 保存到 localStorage
     var localKey = 'songzan_ratings';
     var localData = [];
     try { localData = JSON.parse(localStorage.getItem(localKey) || '[]'); } catch(e) {}
     localData.push(record);
     try { localStorage.setItem(localKey, JSON.stringify(localData)); } catch(e) {}
 
-    // 2. 同步保存到 SCF 云端
-    var savedToCloud = false;
-    var scfReady = API_BASE_URL && API_BASE_URL.indexOf('PASTE_YOUR') === -1;
-    if (scfReady) {
-      showToast('☁️ 正在保存到云端...');
-      try {
-        var resp = await fetch(API_BASE_URL + '?action=save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(record)
-        });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        var result = await resp.json();
-        if (result.success) savedToCloud = true;
-      } catch(e) {
-        console.error('API save failed:', e);
-      }
-    }
-
-    // 3. 显示结果
-    if (savedToCloud) {
-      showToast('✅ 已保存到云端＋本地！');
-    } else if (scfReady) {
-      showToast('⚠️ 云端保存失败，已保存到本地');
-    } else {
-      showToast('✅ 已保存到本地（未配置云端）');
-    }
+    showToast('✅ 评估记录已保存！');
     closeModal();
   }
 
