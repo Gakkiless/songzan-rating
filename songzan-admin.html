@@ -319,14 +319,12 @@ const admin = (function(){
   var filtered = [];
   var charts = {};
 
-  // --- 云端 API 配置（SCF 云函数触发器 URL）---
-  const API_BASE_URL = 'https://1430983566-fxry9x65pb.ap-guangzhou.tencentscf.com';
 
   async function loadRecords() {
     var all = [];
     var seenIds = {};
 
-    // 1. 始终从 localStorage 加载（降级保障）
+    // 从 localStorage 加载
     try {
       var localData = JSON.parse(localStorage.getItem('songzan_ratings') || '[]');
       localData.forEach(function(r) {
@@ -336,25 +334,6 @@ const admin = (function(){
         }
       });
     } catch(e) { console.error('localStorage load failed:', e); }
-
-    // 2. 从 Vercel API 加载（如果已配置）
-    var scfReady = API_BASE_URL && API_BASE_URL.length > 0 && API_BASE_URL.indexOf('PASTE_YOUR') === -1;
-    if (scfReady) {
-      try {
-        var res = await fetch(API_BASE_URL + '?action=list');
-        var result = await res.json();
-        if (result.success) {
-          (result.data || []).forEach(function(r) {
-            if (r && r.id && !seenIds[r.id]) {
-              seenIds[r.id] = true;
-              all.push(r);
-            }
-          });
-        }
-      } catch(e) {
-        console.error('SCF load failed:', e);
-      }
-    }
 
     // 按日期排序（新→旧）
     all.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
@@ -599,28 +578,20 @@ const admin = (function(){
     document.getElementById('detailModal').classList.remove('open');
   }
 
-  async function deleteRecord(id) {
-    if(!confirm('\u786e\u8ba4\u5220\u9664\u8fd9\u6761\u8bc4\u4f30\u8bb0\u5f55\uff1f\u6b64\u64cd\u4f5c\u4e0d\u53ef\u64a4\u9500\u3002'))return;
-    if (!API_BASE_URL || API_BASE_URL.indexOf('PASTE_YOUR') === 0) {
-      showToast('\u26a0\ufe0f \u8bf7\u5148\u914d\u7f6e API_BASE_URL');
+    async function deleteRecord(id) {
+    if(!confirm('确认删除这条评估记录？此操作不可撤销。'))return;
+    try {
+      var localData = JSON.parse(localStorage.getItem('songzan_ratings') || '[]');
+      localData = localData.filter(function(r){ return r.id !== id; });
+      localStorage.setItem('songzan_ratings', JSON.stringify(localData));
+    } catch(e) {
+      showToast('删除失败，请重试');
+      console.error('deleteRecord error:', e);
       return;
     }
-    try {
-      const res = await fetch(API_BASE_URL + '?action=delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id: id })
-      });
-      const result = await res.json();
-      if (!result.success) {
-        showToast('\u5220\u9664\u5931\u8d25\uff1a' + (result.error || '\u672a\u77e5\u9519\u8bef'));
-      }
-    } catch(e) {
-      showToast('\u7f51\u7edc\u9519\u8bef\uff0c\u8bf7\u91cd\u8bd5');
-      console.error('deleteRecord error:', e);
-    }
-    // \u4ece\u670d\u52a1\u7aef\u91cd\u65b0\u52a0\u8f7d\u6570\u636e
     await refresh();
+  }
+
   }
 
   function clearAllData() {
