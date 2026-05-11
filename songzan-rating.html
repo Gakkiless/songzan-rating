@@ -36,6 +36,8 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   .top-bar {
@@ -83,7 +85,7 @@
   .btn-gold { background: var(--gold); color: var(--primary-dark); }
   .btn-gold:hover { background: #B8952F; }
 
-  .app-layout { display: flex; min-height: calc(100vh - 64px); }
+  .app-layout { display: flex; min-height: calc(100vh - 64px); overflow-x: hidden; max-width: 100vw; }
 
   .sidebar {
     width: 240px;
@@ -511,7 +513,7 @@
   }
   @media (max-width: 660px) {
     .sidebar { display: none; }
-    .main-content { padding: 14px 12px 60px; }
+    .main-content { padding: 14px 12px 60px; overflow-x: hidden; max-width: 100vw; }
 
     /* 顶部按钮栏移动端适配 */
     .top-bar {
